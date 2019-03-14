@@ -3,6 +3,8 @@ import yaml
 import regex
 import requests
 import random
+import datetime
+import logging
 
 
 
@@ -16,7 +18,10 @@ class RedditDownloader:
         self._download_limit = 100
         self._subreddits = []
         self._dict_metadata = {}
-
+        '''
+        key: 'subreddit'
+        value: (time_since_metadata_refresh,submissions_list)
+        '''
         self.load_config()
 
         self._reddit = praw.Reddit(client_id=self._id,
@@ -24,8 +29,6 @@ class RedditDownloader:
                              user_agent=self._useragent,
                              username=self._user   ,
                              password=self._password)
-
-        self.download()
     def load_config(self):
         try:
             with open("config.yaml") as f:
@@ -54,10 +57,12 @@ class RedditDownloader:
 
     def _update_metadata_list(self,sub):
         subreddit = self._reddit.subreddit(sub)
-        self._dict_metadata[sub] = subreddit.hot(limit=self._download_batch_size)
+        self._dict_metadata[sub] = (datetime.datetime.now(), subreddit.hot(limit=self._download_batch_size))
+        if(shown_all_hot):
+            self._dict_metadata[sub] = (datetime.datetime.now(), subreddit.new(limit=self._download_batch_size))
 
     def _decide_subreddit(self):
-        return self._subreddits[random.randint(0, len(self._subreddits)-1)]
+
 
     def download(self):
         '''
@@ -65,18 +70,37 @@ class RedditDownloader:
         Download image if it hasn't been shown before or downloaded to folder buffer
 
         '''
-        #Decide what subreddit to download from
-        sub_to_download_from = self._decide_subreddit()
+        #Pick a random subreddit
+        sub_to_download_from = self._subreddits[random.randint(0, len(self._subreddits)-1)]
 
         #Has the metadata dictionary been updated recently? If not, update
-        #if time_since_last_refresh >= download_interval:
-        self._update_metadata_list(sub_to_download_from)
+        # while(sub_to_download_from is in stale_subreddit):
+        #    pick_new_subreddit
 
+        if(long_time_since_metadata_update or depleted_metadata):
+            update_metadata
+
+
+        #if time_since_last_refresh >= download_interval:
+
+        self._update_metadata_list(sub_to_download_from)
+        print(self._dict_metadata)
         #Download image if:
         #   1. Hasn't been shown before
         #   2. Is not in buffer folder (hasn't been downloaded recently)
 
         # Put in buffer
+
+
+        return 'ID'
+
+
+
+#Pick random sub
+#Fetch metadata from hot
+#Download images in hot if: not been shown before && not already downloaded && more recent than X hours (from config)
+#If no images from the subreddit can be shown, pick another
+
 
 
 
