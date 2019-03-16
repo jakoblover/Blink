@@ -2,7 +2,8 @@ from downloaders import RedditDownloader
 from PyQt5 import QtCore
 import time
 import yaml
-from utils import error_log,Media
+import utils
+
 
 class DownloaderThread(QtCore.QThread):
     def __init__(self, queue, parent=None):
@@ -10,7 +11,7 @@ class DownloaderThread(QtCore.QThread):
         self.queue = queue
         self.downloaded_ids = self._read_from_log()
 
-        self._max_buffer_size = 0
+        self._max_queue_size = 0
         self._max_log_size = 0
         self._load_config()
 
@@ -20,20 +21,15 @@ class DownloaderThread(QtCore.QThread):
         try:
             with open("config.yaml") as f:
                 configs = yaml.safe_load(f)
-                self._max_buffer_size = configs['params']['max_buffer_size']
+                self._max_queue_size = configs['params']['max_queue_size']
                 self._max_log_size = configs['params']['max_log_size']
 
         except EnvironmentError as e:
             print("Error when opening config. ",e)
-            error_log('DownloaderThread',"Error when opening config", e)
+            self.error_log('DownloaderThread',"Error when opening config", e)
         except KeyError as e:
             print("Error when applying config. ",e)
-            error_log('DownloaderThread',"Error when applying configs", e)
-
-    def _write_to_log(self):
-        with open('logs/downloaded-images.log', 'w+') as f:
-            f.truncate()
-            f.write('\n'.join(self.downloaded_ids))
+            self.error_log('DownloaderThread',"Error when applying configs", e)
 
     def _read_from_log(self):
         try:
@@ -43,17 +39,22 @@ class DownloaderThread(QtCore.QThread):
             print("Unable to open log file. Returning empty list.")
             return []
 
+    def _write_to_log(self,list):
+        with open('logs/downloaded-images.log', 'w+') as f:
+            f.truncate()
+            f.write('\n'.join(list))
+
     def _log(self,id):
         print("Logging IDs")
         if len(self.downloaded_ids) >= self._max_log_size:
-            print("Buffer is full")
+            print("Queue is full. Removing top entry")
             self.downloaded_ids.pop(0)
         self.downloaded_ids.append(id)
         print("Writing to log")
-        self._write_to_log()
+        self._write_to_log(self.downloaded_ids)
 
 
-    def _check_buffer(self):
+    def _check_queue(self):
         '''
         Checks if buffer needs refill :GLOM:
         '''
@@ -72,7 +73,7 @@ class DownloaderThread(QtCore.QThread):
         self.running = True
         while self.running:
             #If buffer needs refill
-            if self._check_buffer():
+            if self._check_queue():
                 media = self._download()
                 if media != None:
                     self.queue.put(media)
