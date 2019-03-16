@@ -16,6 +16,7 @@ class RedditDownloader:
         self._password = ''
         self._download_batch_size = 0
         self._time_refresh_sub = 0
+        self._media_filepath = ''
         self._last_image_found = None
 
 
@@ -65,9 +66,6 @@ class RedditDownloader:
             print("Error when applying config. ",e)
             utils.error_log('RedditDownloader',"Error when applying configs", e)
 
-    #def _should_update_metadata_list(self):
-
-
     def _update_metadata_list(self,sub,type):
         subreddit = self._reddit.subreddit(sub)
         if type =='hot':
@@ -98,18 +96,21 @@ class RedditDownloader:
             if not valid_url:
                 continue
             elif submission.id not in log:
+                file_name = '{0}.{1}'.format(submission.id, file_format)
                 self._last_image_found = utils.Media(id=submission.id,
                                                      filetype=file_format,
+                                                     filepath=os.path.join(self._media_filepath,file_name),
                                                      title=submission.title,
                                                      url=submission.url,
                                                      top_comment=self._get_top_comment(submission),
-                                                     source='/r/{0}'.format(sub))
+                                                     source='/r/{0}'.format(sub)
+                                                     )
                 print("Found image not in log ",self._last_image_found.id)
                 return self._last_image_found
         print("Found new image returning none")
         return None
 
-    def _save_image(self, url, post_id):
+    def _save_image(self, media):
         '''
         Checks if the provided URL is direct image link
         Checks if we have downloaded it before
@@ -118,10 +119,10 @@ class RedditDownloader:
         Returns None if error occurred
         '''
         try:
-            img_data = requests.get(url).content
-            with open(os.path.join(self._media_filepath,post_id), 'wb') as handler:
+            img_data = requests.get(media.url).content
+            with open(os.path.join(self._media_filepath,'{0}.{1}'.format(media.id,media.filetype)), 'wb') as handler:
                 handler.write(img_data)
-                return post_id
+                return media.id
         except:
             utils.error_log('RedditDownloader','Error when downloading image')
             return None
@@ -138,27 +139,30 @@ class RedditDownloader:
         '''
 
         #Pick a random subreddit
-        sub_to_download_from = self._subreddits[random.randint(0, len(self._subreddits)-1)]
+        idx_subs = [i for i in range(0,len(self._subreddits))]
+        random.shuffle(idx_subs)
 
-        #Check if there are images to be downloaded
-        time_since_refresh_seconds = (datetime.datetime.now() - self._dict_metadata[sub_to_download_from][0]).total_seconds()
-        time_since_refresh_minutes = divmod(time_since_refresh_seconds, 60)[0]
+        #Try the first random subreddit. If it does
+        for i in range(0,len(self._subreddits)):
+            sub_to_download_from = self._subreddits[idx_subs[i]]
 
+            #Check if there are images to be downloaded
+            time_since_refresh_seconds = (datetime.datetime.now() - self._dict_metadata[sub_to_download_from][0]).total_seconds()
+            time_since_refresh_minutes = divmod(time_since_refresh_seconds, 60)[0]
 
-        print("Too long since last refresh? ",time_since_refresh_minutes >= self._time_refresh_sub)
-        if time_since_refresh_minutes >= self._time_refresh_sub or self._find_new_image(log,sub_to_download_from) == None:
-            print("Updating metadata list from ", sub_to_download_from)
-            self._update_metadata_list(sub_to_download_from,'hot')
-            if self._find_new_image(log,sub_to_download_from) == None:
-                self._update_metadata_list(sub_to_download_from,'new')
+            if time_since_refresh_minutes >= self._time_refresh_sub or self._find_new_image(log,sub_to_download_from) == None:
+                print("Updating metadata list from ", sub_to_download_from)
+                self._update_metadata_list(sub_to_download_from,'hot')
                 if self._find_new_image(log,sub_to_download_from) == None:
-                    print("Could not find any images that have not been shown. Should move to another subreddit maybe")
-                    return None
+                    self._update_metadata_list(sub_to_download_from,'new')
+                    if self._find_new_image(log,sub_to_download_from) == None:
+                        print("Could not find any images that have not been shown. Moving to another subreddit")
+                        continue
 
-        #Actually download the image to an image folder
-        downloaded_id = self._save_image(self._last_image_found.url, self._last_image_found.id, )
-        if downloaded_id != None:
-            return self._last_image_found
+            #Actually download the image to an image folder
+            downloaded_id = self._save_image(self._last_image_found)
+            if downloaded_id != None:
+                return self._last_image_found
 
         return None
 

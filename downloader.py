@@ -79,5 +79,4 @@ class DownloaderThread(QtCore.QThread):
                     self.queue.put(media)
                     self._log(media.id)
             time.sleep(2)
-            #return
 

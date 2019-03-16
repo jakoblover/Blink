@@ -55,9 +55,8 @@ class Blink(QtWidgets.QMainWindow):
         media = self.media_queue.get()
 
         if type(media) is utils.Media:
-            filepath = os.path.join(self._media_filepath,media.id)
             print(media.top_comment)
-            pixmap = QtGui.QPixmap(filepath)
+            pixmap = QtGui.QPixmap(media.filepath)
             self._media_label.setPixmap(pixmap)
             self._media_label.show()
         else:
