@@ -55,10 +55,14 @@ class Blink(QtWidgets.QMainWindow):
         media = self.media_queue.get()
 
         if type(media) is utils.Media:
-            print(media.top_comment)
-            pixmap = QtGui.QPixmap(media.filepath)
-            self._media_label.setPixmap(pixmap)
-            self._media_label.show()
+            if media.filetype == 'gif':
+                gif = QtGui.QMovie(media.filepath)
+                self._media_label.setMovie(gif)
+                gif.start()
+            else:
+                pixmap = QtGui.QPixmap(media.filepath)
+                self._media_label.setPixmap(pixmap)
+                self._media_label.show()
         else:
             print("Queue is empty")
 

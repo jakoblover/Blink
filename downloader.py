@@ -3,6 +3,7 @@ from PyQt5 import QtCore
 import time
 import yaml
 import utils
+import PIL.Image
 
 
 class DownloaderThread(QtCore.QThread):
@@ -11,6 +12,9 @@ class DownloaderThread(QtCore.QThread):
         self.queue = queue
         self.downloaded_ids = self._read_from_log()
 
+        #Config parameters
+        self._aspect_ratio_min = 0
+        self._aspect_ratio_max = 0
         self._max_queue_size = 0
         self._max_log_size = 0
         self._load_config()
@@ -23,6 +27,8 @@ class DownloaderThread(QtCore.QThread):
                 configs = yaml.safe_load(f)
                 self._max_queue_size = configs['params']['max_queue_size']
                 self._max_log_size = configs['params']['max_log_size']
+                self._aspect_ratio_min = configs['params']['aspect_ratio_min']
+                self._aspect_ratio_max = configs['params']['aspect_ratio_max']
 
         except EnvironmentError as e:
             print("Error when opening config. ",e)
@@ -60,6 +66,14 @@ class DownloaderThread(QtCore.QThread):
         '''
         return not self.queue.full()
 
+    def _valid_media(self, media):
+        img = PIL.Image.open(media.path)
+        aspect_ratio = img.size[0] / img.size[1]
+        if aspect_ratio >= self._aspect_ratio_min and aspect_ratio <= self._aspect_ratio_max:
+            return True
+        else:
+            return False
+
     def _download(self):
         '''
         Decide what source to download from.
@@ -75,8 +89,15 @@ class DownloaderThread(QtCore.QThread):
             #If buffer needs refill
             if self._check_queue():
                 media = self._download()
+
                 if media != None:
-                    self.queue.put(media)
+                    if self._valid_media(media):
+                        print("Adding to queue")
+                        self.queue.put(media)
+                    else:
+                        print("Media did not meet config specs. Skipping.")
+                        utils.remove_media(media.path)
                     self._log(media.id)
+
             time.sleep(2)
 

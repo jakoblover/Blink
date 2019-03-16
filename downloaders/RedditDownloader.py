@@ -6,6 +6,7 @@ import random
 import datetime
 import utils
 import os
+import PIL.Image
 
 class RedditDownloader:
     def __init__(self):
@@ -17,8 +18,8 @@ class RedditDownloader:
         self._download_batch_size = 0
         self._time_refresh_sub = 0
         self._media_filepath = ''
-        self._last_image_found = None
 
+        self._last_image_found = None
 
         self._subreddits = []
         self._dict_metadata = {}
@@ -38,7 +39,7 @@ class RedditDownloader:
         self._reddit = praw.Reddit(client_id=self._id,
                              client_secret=self._secret,
                              user_agent=self._useragent,
-                             username=self._user   ,
+                             username=self._user,
                              password=self._password)
 
         for subreddit in self._subreddits:
@@ -58,6 +59,7 @@ class RedditDownloader:
                 self._time_refresh_sub = configs['downloaders']['reddit']['params']['time_refresh_sub']
 
                 self._media_filepath = configs['params']['media_filepath']
+
 
         except EnvironmentError as e:
             print("Error when opening config. ",e)
@@ -83,7 +85,9 @@ class RedditDownloader:
             return top_level_comment.body
         return None
 
-    def _find_new_image(self,log,sub):
+
+
+    def _find_new_media(self, log, sub):
         '''
         Compares the log of downloaded images, and compares it with the metadata dictionary.
         Return the first item that is not in the log.
@@ -110,7 +114,7 @@ class RedditDownloader:
         print("Found new image returning none")
         return None
 
-    def _save_image(self, media):
+    def _save_media(self, media):
         '''
         Checks if the provided URL is direct image link
         Checks if we have downloaded it before
@@ -120,9 +124,10 @@ class RedditDownloader:
         '''
         try:
             img_data = requests.get(media.url).content
-            with open(os.path.join(self._media_filepath,'{0}.{1}'.format(media.id,media.filetype)), 'wb') as handler:
+            path = os.path.join(self._media_filepath,'{0}.{1}'.format(media.id,media.filetype))
+            with open(path), 'wb' as handler:
                 handler.write(img_data)
-                return media.id
+            return media.id
         except:
             utils.error_log('RedditDownloader','Error when downloading image')
             return None
@@ -134,8 +139,9 @@ class RedditDownloader:
         '''
         Decide what subreddit to download images from
         Download image if it hasn't been shown before or downloaded to folder buffer
-        @TODO: Refresh a subreddit from hot if we haven't done so in a while to prevent only showing old "new" images
-        @TODO: Prevent download from a stale subreddit for some hours (Long time since a new post)
+        TODO: Refresh a subreddit from hot if we haven't done so in a while to prevent only showing old "new" images
+        TODO: Prevent download from a stale subreddit for some hours (Long time since a new post)
+        TODO: Support videos?
         '''
 
         #Pick a random subreddit
@@ -150,17 +156,17 @@ class RedditDownloader:
             time_since_refresh_seconds = (datetime.datetime.now() - self._dict_metadata[sub_to_download_from][0]).total_seconds()
             time_since_refresh_minutes = divmod(time_since_refresh_seconds, 60)[0]
 
-            if time_since_refresh_minutes >= self._time_refresh_sub or self._find_new_image(log,sub_to_download_from) == None:
+            if time_since_refresh_minutes >= self._time_refresh_sub or self._find_new_media(log, sub_to_download_from) == None:
                 print("Updating metadata list from ", sub_to_download_from)
                 self._update_metadata_list(sub_to_download_from,'hot')
-                if self._find_new_image(log,sub_to_download_from) == None:
+                if self._find_new_media(log, sub_to_download_from) == None:
                     self._update_metadata_list(sub_to_download_from,'new')
-                    if self._find_new_image(log,sub_to_download_from) == None:
+                    if self._find_new_media(log, sub_to_download_from) == None:
                         print("Could not find any images that have not been shown. Moving to another subreddit")
                         continue
 
             #Actually download the image to an image folder
-            downloaded_id = self._save_image(self._last_image_found)
+            downloaded_id = self._save_media(self._last_image_found)
             if downloaded_id != None:
                 return self._last_image_found
 
