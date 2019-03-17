@@ -1,0 +1,44 @@
+downloaders:
+  reddit:
+    id:
+    secret:
+    useragent: blink
+    user: medlemOV
+    password:
+    subreddits:
+      - pics
+    params:
+      download_batch_size: 500 #How many images to attempt downloading per subreddit (MAX: 1000)
+      time_refresh_sub: 30 #In minutes: How long to wait between updating list of posts
+      update_interval: 30
+      show_top_comment: True
+
+  imgur:
+    param: 1
+  pixiv:
+    param: 1
+
+themes:
+  monday:
+    reddit:
+      - miku
+      - hatsunemiku
+      - miggu
+  wednesday:
+    reddit:
+      - me_irl
+      - meirl
+      - absolutelynotme_irl
+
+params:
+  time_show_media: 10 #Shows the media for this amount of seconds
+  time_delay_text: 5 #Waits this amount of seconds before showing text overlay. Must be larger than time_show_media.
+  max_queue_size: 10 #How many images to store before showing
+  max_log_size: 1000 #Keep track of this many media elements we have already shown.
+  media_filepath: /home/omegav/git/Blink/images
+  min_aspect_ratio: 0.25
+  max_aspect_ratio: 3
+  min_gif_length: 4 #Min seconds for a gif
+  max_gif_length: 20 #Max seconds for a gif
+
+
