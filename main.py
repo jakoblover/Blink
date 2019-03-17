@@ -43,17 +43,19 @@ class Blink(QtWidgets.QMainWindow):
 
     def initUI(self):
         self.setWindowTitle(self.title)
+
         self._central_widget = QtWidgets.QWidget(self)
         self._main_layout = QtWidgets.QVBoxLayout()
+        self._main_layout.setContentsMargins(0, 0, 0, 0)
         self._media_label = QtWidgets.QLabel(self)
         self._media_label.setAlignment(QtCore.Qt.AlignCenter)
 
         self._main_layout.addWidget(self._media_label)
         self._central_widget.setLayout(self._main_layout)
-        self._main_layout.setContentsMargins(0,0,0,0)
-
-
+        self._central_widget.setStyleSheet("QWidget { background-color: black; }")
         self.setCentralWidget(self._central_widget)
+
+        self._media_label.showFullScreen()
         self.showFullScreen()
 
     def show_media(self):
@@ -74,7 +76,6 @@ class Blink(QtWidgets.QMainWindow):
                 else:
                     pixmap = QtGui.QPixmap(self._current_media.filepath)
                     self._media_label.setPixmap(pixmap.scaled(self._media_label.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation))
-                    self._media_label.showFullScreen()
 
 
         else:
