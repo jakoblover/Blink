@@ -20,6 +20,7 @@ class RedditDownloader:
         self._time_refresh_sub = 0
         self._media_filepath = ''
         self._last_image_found = None
+        self._max_log_size = 1000
 
 
         self._subreddits = []
@@ -30,6 +31,8 @@ class RedditDownloader:
             'jpg',
             'gif'
         ]
+        self._downloader = 'reddit'
+        self._downloaded_ids = utils.read_from_log(downloader=self._downloader)
 
         '''
         key: 'subreddit'
@@ -55,6 +58,7 @@ class RedditDownloader:
                 self._subreddits = configs['downloaders']['reddit']['subreddits']
                 self._download_batch_size = configs['downloaders']['reddit']['params']['download_batch_size']
                 self._time_refresh_sub = configs['downloaders']['reddit']['params']['time_refresh_sub']
+                self._max_log_size = configs['downloaders']['reddit']['params']['max_log_size']
 
                 self._media_filepath = configs['params']['media_filepath']
 
@@ -129,15 +133,15 @@ class RedditDownloader:
             img_data = requests.get(media.url).content
             with open(os.path.join(self._media_filepath,'{0}.{1}'.format(media.id,media.filetype)), 'wb') as handler:
                 handler.write(img_data)
-                return media.id
-        except:
-            utils.error_log('RedditDownloader','Error when downloading image')
+                return media
+        except Exception as e:
+            utils.error_log('RedditDownloader','Error when downloading image',e)
             return None
 
 
 
 
-    def download(self, log):
+    def download(self):
         '''
         Decide what subreddit to download images from
         Download image if it hasn't been shown before or downloaded to folder buffer
@@ -164,18 +168,19 @@ class RedditDownloader:
             time_since_refresh_minutes = divmod(time_since_refresh_seconds, 60)[0]
 
 
-            if time_since_refresh_minutes >= self._time_refresh_sub or self._find_new_image(log,sub_to_download_from) == None:
+            if time_since_refresh_minutes >= self._time_refresh_sub or self._find_new_image(self._downloaded_ids,sub_to_download_from) == None:
                 print("Updating metadata list from ", sub_to_download_from)
                 self._update_metadata_list(sub_to_download_from,'hot')
-                if self._find_new_image(log,sub_to_download_from) == None:
+                if self._find_new_image(self._downloaded_ids,sub_to_download_from) == None:
                     self._update_metadata_list(sub_to_download_from,'new')
-                    if self._find_new_image(log,sub_to_download_from) == None:
+                    if self._find_new_image(self._downloaded_ids,sub_to_download_from) == None:
                         print("Could not find any images that have not been shown. Moving to another subreddit")
                         continue
 
             #Actually download the image to an image folder
-            downloaded_id = self._save_image(self._last_image_found)
-            if downloaded_id != None:
+            downloaded_media = self._save_image(self._last_image_found)
+            if type(downloaded_media) == utils.Media:
+                utils.log(downloader=self._downloader,list=self._downloaded_ids,id=downloaded_media.id,max_log_size=self._max_log_size)
                 return self._last_image_found
 
         return None

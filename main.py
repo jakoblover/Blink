@@ -16,8 +16,6 @@ class Blink(QtWidgets.QMainWindow):
         self._time_show_media = 0
         self._time_delay_text = 0
         self._media_filepath = ''
-        self._max_aspect_ratio = 0
-        self._min_aspect_ratio = 0
 
         #Other variables
         self.title = 'Blink'
@@ -61,21 +59,18 @@ class Blink(QtWidgets.QMainWindow):
     def show_media(self):
         print("Showing image from queue")
 
-        if type(self._current_media) is utils.Media:
-            utils.remove_media(self._current_media.filepath)
-
         self._current_media = self.media_queue.get()
 
-        valid_media = utils.valid_media(self._current_media,self._min_aspect_ratio,self._max_aspect_ratio)
+
         if type(self._current_media) is utils.Media:
-            if valid_media:
-                if self._current_media.filetype == 'gif':
-                    gif = QtGui.QMovie(self._current_media.filepath)
-                    self._media_label.setMovie(gif)
-                    gif.start()
-                else:
-                    pixmap = QtGui.QPixmap(self._current_media.filepath)
-                    self._media_label.setPixmap(pixmap.scaled(self._media_label.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation))
+            if self._current_media.filetype == 'gif':
+                gif = QtGui.QMovie(self._current_media.filepath)
+                self._media_label.setMovie(gif)
+                gif.start()
+            else:
+                pixmap = QtGui.QPixmap(self._current_media.filepath)
+                self._media_label.setPixmap(pixmap.scaled(self._media_label.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation))
+                #utils.remove_media(self._current_media.filepath)
 
 
         else:
@@ -97,8 +92,6 @@ class Blink(QtWidgets.QMainWindow):
                 self._time_show_media = configs['params']['time_show_media']
                 self._time_delay_text = configs['params']['time_delay_text']
                 self._media_filepath = configs['params']['media_filepath']
-                self._max_aspect_ratio = configs['params']['max_aspect_ratio']
-                self._min_aspect_ratio = configs['params']['min_aspect_ratio']
 
         except EnvironmentError as e:
             print("Error when opening config. ", e)
