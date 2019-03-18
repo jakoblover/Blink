@@ -7,6 +7,7 @@ import datetime
 import utils
 import os
 from prawcore.exceptions import OAuthException
+from praw.exceptions import ClientException
 
 class RedditDownloader:
     def __init__(self):
@@ -36,11 +37,8 @@ class RedditDownloader:
         '''
         self.load_config()
 
-        self._reddit = praw.Reddit(client_id=self._id,
-                             client_secret=self._secret,
-                             user_agent=self._useragent,
-                             username=self._user,
-                             password=self._password)
+
+        self._reddit = None
 
         for subreddit in self._subreddits:
             self._dict_metadata[subreddit] = (datetime.datetime.min,)
@@ -110,9 +108,13 @@ class RedditDownloader:
                     print("Found image not in log ",self._last_image_found.id)
                     return self._last_image_found
             return None
-        except OAuthException:
+        except OAuthException as e:
             print("Error in credentials for RedditDownloader")
-            utils.error_log('RedditDownloader','Error in config. Check credentials.')
+            utils.error_log('RedditDownloader',"Check config",e)
+            return None
+        except ClientException as e:
+            print("Error in credentials for RedditDownloader")
+            utils.error_log('RedditDownloader', "Check config",e)
             return None
 
     def _save_image(self, media):
@@ -142,6 +144,12 @@ class RedditDownloader:
         @TODO: Refresh a subreddit from hot if we haven't done so in a while to prevent only showing old "new" images
         @TODO: Prevent download from a stale subreddit for some hours (Long time since a new post)
         '''
+
+        self._reddit = praw.Reddit( client_id=self._id,
+                                    client_secret=self._secret,
+                                    user_agent=self._useragent,
+                                    username=self._user,
+                                    password=self._password)
 
         #Create a list of numbers from 0 to num_subreddits, and shuffle the order.
         idx_subs = [i for i in range(0,len(self._subreddits))]

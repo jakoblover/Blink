@@ -3,7 +3,8 @@ from PyQt5 import QtCore
 import time
 import yaml
 import utils
-
+from praw.exceptions import ClientException
+from prawcore.exceptions import OAuthException
 
 class DownloaderThread(QtCore.QThread):
     def __init__(self, queue, parent=None):
@@ -29,30 +30,29 @@ class DownloaderThread(QtCore.QThread):
             self.error_log('DownloaderThread',"Error when opening config", e)
         except KeyError as e:
             print("Error when applying config. ",e)
-            self.error_log('DownloaderThread',"Error when applying configs", e)
+            utils.error_log('DownloaderThread',"Error when applying configs", e)
 
     def _read_from_log(self):
         try:
             with open('logs/downloaded-images.log', 'r') as f:
                 return f.read().split('\n')
-        except EnvironmentError:
-            print("Unable to open log file. Returning empty list.")
+        except EnvironmentError as e:
+            utils.error_log('DownloaderThread', "Error reading log file", e)
             return []
 
     def _write_to_log(self,list):
-        with open('logs/downloaded-images.log', 'w+') as f:
-            f.truncate()
-            f.write('\n'.join(list))
+        try:
+            with open('logs/downloaded-images.log', 'w+') as f:
+                f.truncate()
+                f.write('\n'.join(list))
+        except EnvironmentError as e:
+            utils.error_log('DownloaderThread', "Error writing to log file", e)
 
     def _log(self,id):
-        print("Logging IDs")
         if len(self.downloaded_ids) >= self._max_log_size:
-            print("Queue is full. Removing top entry")
             self.downloaded_ids.pop(0)
         self.downloaded_ids.append(id)
-        print("Writing to log")
         self._write_to_log(self.downloaded_ids)
-
 
     def _check_queue(self):
         '''
@@ -64,10 +64,21 @@ class DownloaderThread(QtCore.QThread):
         '''
         Decide what source to download from.
         :return: media object
-        @TODO: Add support for more sources
+        TODO: Add support for more sources
+        TODO: If certain errors happen, prevent from downloading from that source again. If no more sources, stop program
         '''
 
-        return self.reddit.download(self.downloaded_ids)
+
+        try:
+            return self.reddit.download(self.downloaded_ids)
+        except (OAuthException, ClientException) as e:
+            print("Error when calling download function")
+            utils.error_log('DownloaderThread', "Credential error", e)
+            return None
+        except Exception as e:
+            print("Error when calling downloading")
+            utils.error_log('DownloaderThread', "Error calling download function from downloader", e)
+            return None
 
     def run(self):
         self.running = True
@@ -78,5 +89,6 @@ class DownloaderThread(QtCore.QThread):
                 if media != None:
                     self.queue.put(media)
                     self._log(media.id)
+
             time.sleep(2)
 
