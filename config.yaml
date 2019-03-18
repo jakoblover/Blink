@@ -4,7 +4,7 @@ downloaders:
     secret:
     useragent: blink
     user: medlemOV
-    password: 
+    password:
     subreddits:
       - pics
     params:
