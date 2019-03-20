@@ -104,8 +104,7 @@ class Blink(QtWidgets.QMainWindow):
                 gif.setScaledSize(gif_resized_size)
 
                 #Calculate amount of time needed to loop the gif right amount of times
-                if type(self._current_media.duration) is not None:
-
+                try:
                     duration = self._gif_iterations*self._current_media.duration
                     if not self._current_media.duration > self._max_gif_duration:
                         while(duration < self._min_gif_duration):
@@ -114,14 +113,14 @@ class Blink(QtWidgets.QMainWindow):
                             duration -= self._current_media.duration
                     else:
                         duration = self._max_gif_duration
+                except Exception as e:
+                    print("Error fetching image duration. Setting to default")
+                    duration = self._image_duration
 
-                    print("Gif duration: ", self._current_media.duration)
-                    print("Min gif duration: ", self._min_gif_duration)
-                    print("Max gif duration: ", self._max_gif_duration)
-                    print("New gif duration: ", duration)
-
-                    # if duration < self._min_gif_duration:
-                    #     duration = self._current_media.duration*math.ceil(self._min_gif_duration/self._current_media.duration)
+                print("Gif duration: ", self._current_media.duration)
+                print("Min gif duration: ", self._min_gif_duration)
+                print("Max gif duration: ", self._max_gif_duration)
+                print("New gif duration: ", duration)
 
                 #Actually start gif
                 self._media_label.setMovie(gif)

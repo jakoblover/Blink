@@ -39,7 +39,7 @@ params:
   time_delay_text: 5 #Waits this amount of seconds before showing text overlay. Must be larger than image_duration.
   max_queue_size: 10 #How many images to store before showing
   media_filepath: /home/omegav/git/Blink/images
-  min_aspect_ratio: 0.25
+  min_aspect_ratio: 0.5
   max_aspect_ratio: 3
   title_font_size: 30
 

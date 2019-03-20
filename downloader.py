@@ -62,10 +62,14 @@ class DownloaderThread(QtCore.QThread):
                                                 min_aspect_ratio=self._min_aspect_ratio,
                                                 max_aspect_ratio=self._max_aspect_ratio
                                                 )
-                print("Valid media? ", valid_media)
                 if type(media) is utils.Media and valid_media:
                     print("Put in queue")
                     self.queue.put(media)
+                elif type(media) is utils.Media and not valid_media:
+                    print("Not valid media, deleting ", media.filepath)
+                    utils.remove_media(media.filepath)
+                else:
+                    print("Returned image was not of media type")
 
             time.sleep(2)
 

@@ -154,6 +154,8 @@ class RedditDownloader:
         Download image if it hasn't been shown before or downloaded to folder buffer
         @TODO: Refresh a subreddit from hot if we haven't done so in a while to prevent only showing old "new" images
         @TODO: Prevent download from a stale subreddit for some hours (Long time since a new post)
+        TODO: Some GIFs do not have the looping variable set, and won't loop
+        TODO: Images should be downloaded to a temporary folder, and then be moved if it is valid. For now, if images are not valid media, it is stored in the same folder as valid media first and then deleted.
         '''
         try:
             self._reddit = praw.Reddit( client_id=self._id,
@@ -192,20 +194,28 @@ class RedditDownloader:
             downloaded_media = self._save_image(self._last_image_found)
 
             # Add parameters we don't know until image is downloaded
+            if type(downloaded_media) is utils.Media:
+                try:
+                    downloaded_media.width, downloaded_media.height = utils.get_width_height(downloaded_media.filepath)
+                    if downloaded_media.filetype == 'gif':
+                        downloaded_media.duration = utils.get_gif_duration(downloaded_media.filepath)
+                        print("GIF duration: ", downloaded_media.duration)
+                except:
+                    utils.error_log('RedditDownloader','Error fetching image metadata')
+                    utils.remove_media(downloaded_media.filepath)
+                    return None
 
-            downloaded_media.width, downloaded_media.height = utils.get_width_height(downloaded_media.filepath)
-            downloaded_media.duration = utils.get_gif_duration(downloaded_media.filepath)
-
-            if type(downloaded_media.width) is None or type(downloaded_media.height) is None:
-                utils.remove_media(downloaded_media.filepath)
-            if type(downloaded_media.duration) is None and downloaded_media.filetype == 'gif':
-                utils.remove_media(downloaded_media.filepath)
-
+            if downloaded_media.filetype == 'gif' and type(downloaded_media.duration) is None:
+                utils.error_log('RedditDownloader','GIF duration was 0')
+                return None
+            elif type(downloaded_media.width) is None or type(downloaded_media.height) is None:
+                utils.error_log('RedditDownloader', 'Width and height of image was undefined')
+                return None
             if type(downloaded_media) == utils.Media:
                 utils.log(downloader=self._downloader,list=self._downloaded_ids,id=downloaded_media.id,max_log_size=self._max_log_size)
                 return downloaded_media
-
-        return None
+            else:
+                return None
 
 
 #Pick random sub

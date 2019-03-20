@@ -2,11 +2,13 @@ import os
 import PIL.Image
 
 def error_log(sender='etc', message='An error has occured', error=''):
+
     with open("logs/{0}-errors.log".format(sender), "a+") as f:
         f.write('[ERROR] {0}. {1}\n'.format(message,error))
 
 def remove_media(path):
-    os.remove(path)
+    if os.path.isfile(path):
+        os.unlink(path)
 
 def remove_all_media(path):
     for file in os.listdir(path):
