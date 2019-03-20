@@ -13,6 +13,8 @@ class DownloaderThread(QtCore.QThread):
 
         self._max_aspect_ratio = 0
         self._min_aspect_ratio = 0
+        self._max_gif_duration = 0
+        self._min_gif_duration = 0
 
         self._load_config()
 
@@ -25,6 +27,8 @@ class DownloaderThread(QtCore.QThread):
 
                 self._max_aspect_ratio = configs['params']['max_aspect_ratio']
                 self._min_aspect_ratio = configs['params']['min_aspect_ratio']
+                #self._max_gif_duration = configs['params']['max_gif_duration']
+                #self._min_gif_duration = configs['params']['min_gif_duration']
 
         except EnvironmentError as e:
             print("Error when opening config. ",e)
@@ -54,8 +58,13 @@ class DownloaderThread(QtCore.QThread):
         while self.running:
             if self._check_queue():
                 media = self._download()
-                valid_media = utils.valid_media(media, self._min_aspect_ratio, self._max_aspect_ratio)
+                valid_media = utils.valid_media(media,
+                                                min_aspect_ratio=self._min_aspect_ratio,
+                                                max_aspect_ratio=self._max_aspect_ratio
+                                                )
+                print("Valid media? ", valid_media)
                 if type(media) is utils.Media and valid_media:
+                    print("Put in queue")
                     self.queue.put(media)
 
             time.sleep(2)

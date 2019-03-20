@@ -8,6 +8,7 @@ import utils
 import os
 from prawcore.exceptions import OAuthException
 from praw.exceptions import ClientException
+import PIL.Image
 
 class RedditDownloader:
     def __init__(self):
@@ -101,14 +102,17 @@ class RedditDownloader:
                     continue
                 elif submission.id not in log:
                     file_name = '{0}.{1}'.format(submission.id, file_format)
+                    file_path = os.path.join(self._media_filepath, file_name)
                     self._last_image_found = utils.Media(id=submission.id,
                                                          filetype=file_format,
-                                                         filepath=os.path.join(self._media_filepath,file_name),
+                                                         filepath=file_path,
                                                          title=submission.title,
                                                          url=submission.url,
                                                          top_comment=self._get_top_comment(submission),
-                                                         source='/r/{0}'.format(sub)
+                                                         source='/r/{0}'.format(sub),
+                                                         duration=utils.get_gif_duration(file_path),
                                                          )
+
                     print("Found image not in log ",self._last_image_found.id)
                     return self._last_image_found
             return None
@@ -136,6 +140,10 @@ class RedditDownloader:
                 return media
         except Exception as e:
             utils.error_log('RedditDownloader','Error when downloading image',e)
+            utils.log(downloader=self._downloader,
+                      list=self._downloaded_ids,
+                      id=media.id,
+                      max_log_size=self._max_log_size)
             return None
 
 
@@ -148,12 +156,16 @@ class RedditDownloader:
         @TODO: Refresh a subreddit from hot if we haven't done so in a while to prevent only showing old "new" images
         @TODO: Prevent download from a stale subreddit for some hours (Long time since a new post)
         '''
-
-        self._reddit = praw.Reddit( client_id=self._id,
+        try:
+            self._reddit = praw.Reddit( client_id=self._id,
                                     client_secret=self._secret,
                                     user_agent=self._useragent,
                                     username=self._user,
                                     password=self._password)
+        except Exception as e:
+            utils.error_log('RedditDownloader',"Error creating reddit praw object",e)
+            return None
+
 
         #Create a list of numbers from 0 to num_subreddits, and shuffle the order.
         idx_subs = [i for i in range(0,len(self._subreddits))]
@@ -179,8 +191,10 @@ class RedditDownloader:
 
             #Actually download the image to an image folder
             downloaded_media = self._save_image(self._last_image_found)
+
             if type(downloaded_media) == utils.Media:
                 utils.log(downloader=self._downloader,list=self._downloaded_ids,id=downloaded_media.id,max_log_size=self._max_log_size)
+                self._last_image_found.width,self._last_image_found.height = utils.get_width_height(self._last_image_found.filepath)
                 return self._last_image_found
 
         return None

@@ -6,14 +6,14 @@ downloaders:
     user: medlemOV
     password:
     subreddits:
-      - gifs
+      - meirl
       - me_irl
     params:
       download_batch_size: 750 #How many images to attempt downloading per subreddit (MAX: 1000)
       time_refresh_sub: 30 #In minutes: How long to wait between updating list of posts
       update_interval: 30
       show_top_comment: True
-      max_log_size: 110 #Keep track of this many media elements we have already shown.
+      max_log_size: 1000 #Keep track of this many media elements we have already shown.
 
   imgur:
     param: 1
@@ -33,14 +33,16 @@ themes:
       - absolutelynotme_irl
 
 params:
-  time_show_media: 10 #Shows the media for this amount of seconds
-  time_delay_text: 5 #Waits this amount of seconds before showing text overlay. Must be larger than time_show_media.
+  image_duration: 10 #Shows images for this amount of seconds
+  min_gif_duration: 1 #Show gifs for at least this amount of seconds
+  max_gif_duration: 100 #Show gifs for maximum this amount of seconds
+  gif_iterations: 2 #Optimally, show gifs for this amount of iterations. min_gif_duration and max_gif_duration supersedes this config
+  time_delay_text: 5 #Waits this amount of seconds before showing text overlay. Must be larger than image_duration.
   max_queue_size: 40 #How many images to store before showing
   media_filepath: /home/omegav/git/Blink/images
   min_aspect_ratio: 0.25
   max_aspect_ratio: 3
-  min_gif_length: 4 #Min seconds for a gif
-  max_gif_length: 20 #Max seconds for a gif
+
 
 
 

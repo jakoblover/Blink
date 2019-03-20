@@ -8,16 +8,42 @@ def error_log(sender='etc', message='An error has occured', error=''):
 def remove_media(path):
     os.remove(path)
 
-def valid_media(media, min_aspect_ratio, max_aspect_ratio):
+def get_gif_duration(filepath):
+    try:
+        img = PIL.Image.open(filepath)
+        img.seek(0)
+        frames = duration = 0
+        try:
+            while True:
+                frames += 1
+                duration += img.info['duration']
+                img.seek(img.tell() + 1)
+        except EOFError:
+            return frames / duration * 1000
+    except Exception as e:
+        return None
+
+def get_width_height(filepath):
+    try:
+        img = PIL.Image.open(filepath)
+        width,height = img.size[0], img.size[1]
+        return width,height
+    except Exception as e:
+        print("Big fugg when fetching height and width")
+        return None,None
+
+def valid_media(media, min_aspect_ratio=0, max_aspect_ratio=0):
     try:
         img = PIL.Image.open(media.filepath)
         aspect_ratio = img.size[0] / img.size[1]
+
         if aspect_ratio >= min_aspect_ratio and aspect_ratio <= max_aspect_ratio:
             return True
         else:
             return False
 
     except Exception as e:
+        return False
         print("Something wrong happened when checking if media was valid. ",e)
 
 def read_from_log(downloader=''):
@@ -37,13 +63,13 @@ def write_to_log(downloader,list):
         error_log('DownloaderThread', "Error writing to log file", e)
 
 def log(downloader='',list=None,id=None,max_log_size=1000):
-    if len(list) >= max_log_size:
+    while len(list) >= max_log_size:
         list.pop(0)
     list.append(id)
     write_to_log(downloader,list)
 
 class Media():
-    def __init__(self,id=None, filetype=None, filepath=None, title=None, top_comment=None, source=None, url=None):
+    def __init__(self,id=None, filetype=None, filepath=None, title=None, top_comment=None, source=None, url=None, duration=None, width=None, height=None):
         self.id = id
         self.filetype = filetype
         self.filepath = filepath
@@ -51,3 +77,6 @@ class Media():
         self.top_comment = top_comment
         self.source = source
         self.url = url
+        self.duration = duration
+        self.width = width
+        self.height = height
