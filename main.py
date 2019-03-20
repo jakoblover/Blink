@@ -5,7 +5,7 @@ import yaml
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 import utils
-import os
+import math
 
 
 
@@ -17,6 +17,10 @@ class Blink(QtWidgets.QMainWindow):
         self._image_duration = 0
         self._time_delay_text = 0
         self._media_filepath = ''
+        self._title_font_size = 0
+        self._min_gif_duration = 0
+        self._max_gif_duration = 0
+        self._gif_iterations = 0
 
         #Other variables
         self.title = 'Blink'
@@ -35,29 +39,41 @@ class Blink(QtWidgets.QMainWindow):
         self._viewer_timer.setSingleShot(True)
         self._viewer_timer.timeout.connect(self.show_media)
 
+        #Clear the image buffer
+        utils.remove_all_media(self._media_filepath)
+
         self.initUI()
 
 
 
     def initUI(self):
         self.setWindowTitle(self.title)
+
         screenShape = QtWidgets.QDesktopWidget().screenGeometry()
         self.resize(screenShape.width(), screenShape.height())
 
-        self._central_widget = QtWidgets.QWidget(self)
-        self._main_layout = QtWidgets.QVBoxLayout()
-        self._main_layout.setContentsMargins(0, 0, 0, 0)
-        self._media_label = QtWidgets.QLabel(self)
+        widget = QtWidgets.QWidget()
+        self.setCentralWidget(widget)
+
+        self._title_label = QtWidgets.QLabel(self)
+        self._title_label.setWordWrap(True)
+        self._title_label.setStyleSheet("QLabel { color : white;}")
+        self._title_label.setFont(QtGui.QFont("Sans Serif", self._title_font_size, QtGui.QFont.Bold))
+        drop_shadow = QtWidgets.QGraphicsDropShadowEffect()
+        drop_shadow.setBlurRadius(5)
+        drop_shadow.setColor(QtGui.QColor("#000000"))
+        drop_shadow.setOffset(0,0)
+        self._title_label.setGraphicsEffect(drop_shadow)
+
+        self._media_label = QtWidgets.QLabel(widget)
         self._media_label.setAlignment(QtCore.Qt.AlignCenter)
-        self._media_label.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
+        self._media_label.resize(screenShape.width(), screenShape.height())
+        self._media_label.setStyleSheet("background-color:black;")
 
-        #self._text_label = QtWidgets.QLabel()
-        #self._text_label.setText("TESTING TESTING TESTING")
-
-        self._main_layout.addWidget(self._media_label)
-        self._central_widget.setLayout(self._main_layout)
-        self._central_widget.setStyleSheet("QWidget { background-color: black; }")
-        self.setCentralWidget(self._central_widget)
+        main_layout = QtWidgets.QHBoxLayout(widget)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.addWidget(self._title_label)
+        main_layout.setAlignment(QtCore.Qt.AlignTop)
 
 
         self._media_label.showFullScreen()
@@ -67,7 +83,12 @@ class Blink(QtWidgets.QMainWindow):
     def show_media(self):
         print(self._media_label.size())
 
+        if type(self._current_media) is utils.Media:
+            utils.remove_media(self._current_media.filepath)
+
         self._current_media = self.media_queue.get()
+
+        duration = self._image_duration
 
         if type(self._current_media) is utils.Media:
             if self._current_media.filetype == 'gif':
@@ -82,28 +103,47 @@ class Blink(QtWidgets.QMainWindow):
                 gif_resized_size = QtCore.QSize(self._current_media.width*scale_factor,self._current_media.height*scale_factor)
                 gif.setScaledSize(gif_resized_size)
 
+                #Calculate amount of time needed to loop the gif right amount of times
+                if type(self._current_media.duration) is not None:
+
+                    duration = self._gif_iterations*self._current_media.duration
+                    if not self._current_media.duration > self._max_gif_duration:
+                        while(duration < self._min_gif_duration):
+                            duration += self._current_media.duration
+                        while(duration > self._max_gif_duration):
+                            duration -= self._current_media.duration
+                    else:
+                        duration = self._max_gif_duration
+
+                    print("Gif duration: ", self._current_media.duration)
+                    print("Min gif duration: ", self._min_gif_duration)
+                    print("Max gif duration: ", self._max_gif_duration)
+                    print("New gif duration: ", duration)
+
+                    # if duration < self._min_gif_duration:
+                    #     duration = self._current_media.duration*math.ceil(self._min_gif_duration/self._current_media.duration)
+
                 #Actually start gif
                 self._media_label.setMovie(gif)
+                self._title_label.setText(self._current_media.title)
                 gif.start()
             else:
+                self._title_label.setText(self._current_media.title)
                 pixmap = QtGui.QPixmap(self._current_media.filepath)
                 self._media_label.setPixmap(pixmap.scaled(self._media_label.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation))
                 self._viewer_timer.startTimer(self._image_duration)
-                #utils.remove_media(self._current_media.filepath)
         else:
             print("Queue is empty")
 
-
-        timer = QtCore.QTimer.singleShot(10000, self.show_media)
+        print(duration)
+        timer = QtCore.QTimer.singleShot(duration*1000, self.show_media)
 
 
 
     def showBlink(self):
-        self._viewer_timer.start()
         self.showFullScreen()
 
     def hideBlink(self):
-        self._viewer_timer.stop()
         self.hide()
 
     def _load_config(self):
@@ -114,6 +154,10 @@ class Blink(QtWidgets.QMainWindow):
                 self._image_duration = configs['params']['image_duration']
                 self._time_delay_text = configs['params']['time_delay_text']
                 self._media_filepath = configs['params']['media_filepath']
+                self._title_font_size = configs['params']['title_font_size']
+                self._min_gif_duration = configs['params']['min_gif_duration']
+                self._max_gif_duration = configs['params']['max_gif_duration']
+                self._gif_iterations = configs['params']['gif_iterations']
 
         except EnvironmentError as e:
             print("Error when opening config. ", e)

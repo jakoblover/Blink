@@ -28,11 +28,11 @@ class DownloaderThread(QtCore.QThread):
                 self._max_aspect_ratio = configs['params']['max_aspect_ratio']
                 self._min_aspect_ratio = configs['params']['min_aspect_ratio']
                 #self._max_gif_duration = configs['params']['max_gif_duration']
-                #self._min_gif_duration = configs['params']['min_gif_duration']
+                #
 
         except EnvironmentError as e:
             print("Error when opening config. ",e)
-            self.error_log('DownloaderThread',"Error when opening config", e)
+            utils.error_log('DownloaderThread',"Error when opening config", e)
         except KeyError as e:
             print("Error when applying config. ",e)
             utils.error_log('DownloaderThread',"Error when applying configs", e)

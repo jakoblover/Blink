@@ -110,7 +110,6 @@ class RedditDownloader:
                                                          url=submission.url,
                                                          top_comment=self._get_top_comment(submission),
                                                          source='/r/{0}'.format(sub),
-                                                         duration=utils.get_gif_duration(file_path),
                                                          )
 
                     print("Found image not in log ",self._last_image_found.id)
@@ -192,10 +191,19 @@ class RedditDownloader:
             #Actually download the image to an image folder
             downloaded_media = self._save_image(self._last_image_found)
 
+            # Add parameters we don't know until image is downloaded
+
+            downloaded_media.width, downloaded_media.height = utils.get_width_height(downloaded_media.filepath)
+            downloaded_media.duration = utils.get_gif_duration(downloaded_media.filepath)
+
+            if type(downloaded_media.width) is None or type(downloaded_media.height) is None:
+                utils.remove_media(downloaded_media.filepath)
+            if type(downloaded_media.duration) is None and downloaded_media.filetype == 'gif':
+                utils.remove_media(downloaded_media.filepath)
+
             if type(downloaded_media) == utils.Media:
                 utils.log(downloader=self._downloader,list=self._downloaded_ids,id=downloaded_media.id,max_log_size=self._max_log_size)
-                self._last_image_found.width,self._last_image_found.height = utils.get_width_height(self._last_image_found.filepath)
-                return self._last_image_found
+                return downloaded_media
 
         return None
 

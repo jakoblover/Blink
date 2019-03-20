@@ -6,10 +6,9 @@ downloaders:
     user: medlemOV
     password:
     subreddits:
-      - meirl
-      - me_irl
+      - gifs
     params:
-      download_batch_size: 750 #How many images to attempt downloading per subreddit (MAX: 1000)
+      download_batch_size: 1000 #How many images to attempt downloading per subreddit (MAX: 1000)
       time_refresh_sub: 30 #In minutes: How long to wait between updating list of posts
       update_interval: 30
       show_top_comment: True
@@ -34,14 +33,15 @@ themes:
 
 params:
   image_duration: 10 #Shows images for this amount of seconds
-  min_gif_duration: 1 #Show gifs for at least this amount of seconds
+  min_gif_duration: 15 #Show gifs for at least this amount of seconds
   max_gif_duration: 100 #Show gifs for maximum this amount of seconds
   gif_iterations: 2 #Optimally, show gifs for this amount of iterations. min_gif_duration and max_gif_duration supersedes this config
   time_delay_text: 5 #Waits this amount of seconds before showing text overlay. Must be larger than image_duration.
-  max_queue_size: 40 #How many images to store before showing
+  max_queue_size: 10 #How many images to store before showing
   media_filepath: /home/omegav/git/Blink/images
   min_aspect_ratio: 0.25
   max_aspect_ratio: 3
+  title_font_size: 30
 
 
 

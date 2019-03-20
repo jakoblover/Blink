@@ -8,6 +8,16 @@ def error_log(sender='etc', message='An error has occured', error=''):
 def remove_media(path):
     os.remove(path)
 
+def remove_all_media(path):
+    for file in os.listdir(path):
+        file_path = os.path.join(path, file)
+        try:
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+        except Exception as e:
+            error_log('utils', 'Error removing media', e)
+            print(e)
+
 def get_gif_duration(filepath):
     try:
         img = PIL.Image.open(filepath)
@@ -21,6 +31,7 @@ def get_gif_duration(filepath):
         except EOFError:
             return frames / duration * 1000
     except Exception as e:
+        error_log('utils', 'Error fetching gif duration', e)
         return None
 
 def get_width_height(filepath):
@@ -30,6 +41,7 @@ def get_width_height(filepath):
         return width,height
     except Exception as e:
         print("Big fugg when fetching height and width")
+        error_log('utils', 'Width and height could not be extracted. Image was probably not an image file.', e)
         return None,None
 
 def valid_media(media, min_aspect_ratio=0, max_aspect_ratio=0):
@@ -43,8 +55,8 @@ def valid_media(media, min_aspect_ratio=0, max_aspect_ratio=0):
             return False
 
     except Exception as e:
+        error_log('utils', 'Error checking for valid media', e)
         return False
-        print("Something wrong happened when checking if media was valid. ",e)
 
 def read_from_log(downloader=''):
     try:
