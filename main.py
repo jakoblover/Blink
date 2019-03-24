@@ -7,7 +7,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 import utils
 import math
 
-
+#TODO: Implement log filepath from config
 
 class Blink(QtWidgets.QMainWindow):
     def __init__(self):
@@ -60,9 +60,9 @@ class Blink(QtWidgets.QMainWindow):
         self._title_label.setStyleSheet("QLabel { color : white;}")
         self._title_label.setFont(QtGui.QFont("Sans Serif", self._title_font_size, QtGui.QFont.Bold))
         drop_shadow = QtWidgets.QGraphicsDropShadowEffect()
-        drop_shadow.setBlurRadius(5)
+        drop_shadow.setBlurRadius(20)
         drop_shadow.setColor(QtGui.QColor("#000000"))
-        drop_shadow.setOffset(0,0)
+        drop_shadow.setOffset(5,5)
         self._title_label.setGraphicsEffect(drop_shadow)
 
         self._media_label = QtWidgets.QLabel(widget)
@@ -81,16 +81,18 @@ class Blink(QtWidgets.QMainWindow):
 
 
     def show_media(self):
-        print(self._media_label.size())
 
+        #Delete the previously shown media
         if type(self._current_media) is utils.Media:
             utils.remove_media(self._current_media.filepath)
 
+        #Fetch new image from queue
         self._current_media = self.media_queue.get()
 
+        #Show new image from queue
         duration = self._image_duration
-
         if type(self._current_media) is utils.Media:
+
             if self._current_media.filetype == 'gif':
                 gif = QtGui.QMovie(self._current_media.filepath)
 
@@ -117,11 +119,6 @@ class Blink(QtWidgets.QMainWindow):
                     print("Error fetching image duration. Setting to default")
                     duration = self._image_duration
 
-                print("Gif duration: ", self._current_media.duration)
-                print("Min gif duration: ", self._min_gif_duration)
-                print("Max gif duration: ", self._max_gif_duration)
-                print("New gif duration: ", duration)
-
                 #Actually start gif
                 self._media_label.setMovie(gif)
                 self._title_label.setText(self._current_media.title)
@@ -129,8 +126,12 @@ class Blink(QtWidgets.QMainWindow):
             else:
                 self._title_label.setText(self._current_media.title)
                 pixmap = QtGui.QPixmap(self._current_media.filepath)
-                self._media_label.setPixmap(pixmap.scaled(self._media_label.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation))
-                self._viewer_timer.startTimer(self._image_duration)
+                if pixmap.isNull():
+                    duration = 0.1
+                else:
+                    self._media_label.setPixmap(pixmap.scaled(self._media_label.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation))
+
+
         else:
             print("Queue is empty")
 
