@@ -1,88 +1,55 @@
 import praw
-import yaml
 import requests
 import random
 import datetime
 import utils
 import os
+from downloaders import BaseDownloader
 
 from prawcore.exceptions import OAuthException
 from praw.exceptions import ClientException
 import PIL.Image
 
 
-class RedditDownloader:
+class RedditDownloader(BaseDownloader):
     def __init__(self, config):
         self.config = config
+        self.validate_config()
 
-    def initFromConfig(self, config):
-        init(id, secret, useragent, password)
+        self.init()
 
-    def init():
+    def init(self):
 
-        self._id = ""
-        self._secret = ""
-        self._useragent = ""
-        self._user = ""
-        self._password = ""
-        self._download_batch_size = 0
-        self._time_refresh_sub = 0
-        self._media_filepath = ""
+        self._id = self.config["id"]
+        self._secret = self.config["secret"]
+        self._useragent = self.config["useragent"]
+        self._user = self.config["user"]
+        self._password = self.config["password"]
+        self._download_batch_size = self.config["download_batch_size"]
+        self._time_refresh_sub = self.config["time_refresh_sub"]
+        self._update_interval = self.config["update_interval"]
+        self._show_top_comment = self.config["show_top_comment"]
+        self._max_log_size = self.config["max_log_size"]
+
         self._last_image_found = None
-        self._max_log_size = 1000
-
         self._subreddits = []
         self._dict_metadata = {}
         self._supported_image_formats = ["png", "jpeg", "jpg", "gif"]
         self._downloader = "reddit"
-        self._downloaded_ids = utils.read_from_log(downloader=self._downloader)
+        # self._downloaded_ids = utils.read_from_log(downloader=self._downloader)
 
         """
         key: 'subreddit'
         value: (time_since_metadata_refresh,submissions_list)
         """
-        self.load_config()
 
         self._reddit = None
 
         for subreddit in self._subreddits:
             self._dict_metadata[subreddit] = (datetime.datetime.min,)
 
-    # def load_config(self):
-    #     try:
-    #         with open("config.yaml") as f:
-    #             configs = yaml.safe_load(f)
-    #             self._id = configs["downloaders"]["reddit"]["id"]
-    #             self._secret = configs["downloaders"]["reddit"]["secret"]
-    #             self._useragent = configs["downloaders"]["reddit"]["useragent"]
-    #             self._user = configs["downloaders"]["reddit"]["user"]
-    #             self._password = configs["downloaders"]["reddit"]["password"]
-    #             self._subreddits = configs["downloaders"]["reddit"]["subreddits"]
-    #             self._download_batch_size = configs["downloaders"]["reddit"]["params"][
-    #                 "download_batch_size"
-    #             ]
-    #             self._time_refresh_sub = configs["downloaders"]["reddit"]["params"][
-    #                 "time_refresh_sub"
-    #             ]
-    #             self._max_log_size = configs["downloaders"]["reddit"]["params"][
-    #                 "max_log_size"
-    #             ]
-    #
-    #             self._media_filepath = configs["params"]["media_filepath"]
-    #
-    #     except EnvironmentError as e:
-    #         print("Error when opening config. ", e)
-    #         utils.error_log("RedditDownloader", "Error when opening config", e)
-    #     except KeyError as e:
-    #         print("Error when applying config. ", e)
-    #         utils.error_log("RedditDownloader", "Error when applying configs", e)
-
-    def validate_config(self, config_dict):
-
-        if config_not_valid:
-            raise InvalidConfigException
-
-        return True
+    def validate_config(self):
+        pass
 
     def _update_metadata_list(self, sub, type):
         subreddit = self._reddit.subreddit(sub)
@@ -154,9 +121,7 @@ class RedditDownloader:
         try:
             img_data = requests.get(media.url).content
             with open(
-                os.path.join(
-                    self._media_filepath, "{0}.{1}".format(media.id, media.filetype)
-                ),
+                os.path.join(self._media_filepath, "{0}.{1}".format(media.id, media.filetype)),
                 "wb",
             ) as handler:
                 handler.write(img_data)
@@ -208,15 +173,11 @@ class RedditDownloader:
 
             if (
                 time_since_refresh_minutes >= self._time_refresh_sub
-                or self._find_new_image(self._downloaded_ids, sub_to_download_from)
-                == None
+                or self._find_new_image(self._downloaded_ids, sub_to_download_from) == None
             ):
                 print("Updating metadata list from ", sub_to_download_from)
                 self._update_metadata_list(sub_to_download_from, "hot")
-                if (
-                    self._find_new_image(self._downloaded_ids, sub_to_download_from)
-                    == None
-                ):
+                if self._find_new_image(self._downloaded_ids, sub_to_download_from) == None:
                     self._update_metadata_list(sub_to_download_from, "new")
                     if (
                         self._find_new_image(self._downloaded_ids, sub_to_download_from)
@@ -250,19 +211,11 @@ class RedditDownloader:
             else:
                 return None
 
-            if (
-                downloaded_media.filetype == "gif"
-                and type(downloaded_media.duration) is None
-            ):
+            if downloaded_media.filetype == "gif" and type(downloaded_media.duration) is None:
                 utils.error_log("RedditDownloader", "GIF duration was 0")
                 return None
-            elif (
-                type(downloaded_media.width) is None
-                or type(downloaded_media.height) is None
-            ):
-                utils.error_log(
-                    "RedditDownloader", "Width and height of image was undefined"
-                )
+            elif type(downloaded_media.width) is None or type(downloaded_media.height) is None:
+                utils.error_log("RedditDownloader", "Width and height of image was undefined")
                 return None
 
             if type(downloaded_media) == utils.Media:

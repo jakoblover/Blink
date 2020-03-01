@@ -10,6 +10,10 @@ class Config:
         self._validate_config()
 
     def _validate_config(self):
+        """
+        Checks if the config has the correct base configs set
+        :return:
+        """
         try:
             # Parameters #
             assert type(self.config_dict["parameters"]["image_duration"]) == int
@@ -47,7 +51,7 @@ class Config:
                 # Check if we are able to create a class
                 _module = importlib.import_module("downloaders")
                 _class = getattr(_module, _config["class"])
-                instance = _class(_config)
+                instance = _class(self.get_downloader_config(_downloader_name))
 
             # Check that the weighting section sums up to 1.0
             _weights = 0
@@ -63,6 +67,11 @@ class Config:
             raise
 
     def _load_config(self, path):
+        """
+        Reads config from file
+        :param path:
+        :return:
+        """
         try:
             with open(path) as f:
                 configs = yaml.safe_load(f)
@@ -81,6 +90,13 @@ class Config:
         return_dict.update({"parameters": self.config_dict["parameters"]})
         return_dict.update({"weights": self.config_dict["weights"]})
         return_dict.update({"schedule": self.config_dict["schedule"]})
+
+        return return_dict
+
+    def get_downloader_config(self, downloader_name):
+        return_dict = dict()
+        return_dict.update({"parameters": self.config_dict["parameters"]})
+        return_dict.update(self.config_dict["downloaders"][downloader_name]["conf"])
 
         return return_dict
 
