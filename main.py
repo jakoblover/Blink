@@ -5,6 +5,7 @@ import yaml
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 import utils
+import config
 import math
 
 # TODO: Implement log filepath from config

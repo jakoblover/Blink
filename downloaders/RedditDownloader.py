@@ -5,13 +5,21 @@ import random
 import datetime
 import utils
 import os
+
 from prawcore.exceptions import OAuthException
 from praw.exceptions import ClientException
 import PIL.Image
 
 
 class RedditDownloader:
-    def __init__(self):
+    def __init__(self, config):
+        self.config = config
+
+    def initFromConfig(self, config):
+        init(id, secret, useragent, password)
+
+    def init():
+
         self._id = ""
         self._secret = ""
         self._useragent = ""
@@ -40,34 +48,41 @@ class RedditDownloader:
         for subreddit in self._subreddits:
             self._dict_metadata[subreddit] = (datetime.datetime.min,)
 
-    def load_config(self):
-        try:
-            with open("config.yaml") as f:
-                configs = yaml.safe_load(f)
-                self._id = configs["downloaders"]["reddit"]["id"]
-                self._secret = configs["downloaders"]["reddit"]["secret"]
-                self._useragent = configs["downloaders"]["reddit"]["useragent"]
-                self._user = configs["downloaders"]["reddit"]["user"]
-                self._password = configs["downloaders"]["reddit"]["password"]
-                self._subreddits = configs["downloaders"]["reddit"]["subreddits"]
-                self._download_batch_size = configs["downloaders"]["reddit"]["params"][
-                    "download_batch_size"
-                ]
-                self._time_refresh_sub = configs["downloaders"]["reddit"]["params"][
-                    "time_refresh_sub"
-                ]
-                self._max_log_size = configs["downloaders"]["reddit"]["params"][
-                    "max_log_size"
-                ]
+    # def load_config(self):
+    #     try:
+    #         with open("config.yaml") as f:
+    #             configs = yaml.safe_load(f)
+    #             self._id = configs["downloaders"]["reddit"]["id"]
+    #             self._secret = configs["downloaders"]["reddit"]["secret"]
+    #             self._useragent = configs["downloaders"]["reddit"]["useragent"]
+    #             self._user = configs["downloaders"]["reddit"]["user"]
+    #             self._password = configs["downloaders"]["reddit"]["password"]
+    #             self._subreddits = configs["downloaders"]["reddit"]["subreddits"]
+    #             self._download_batch_size = configs["downloaders"]["reddit"]["params"][
+    #                 "download_batch_size"
+    #             ]
+    #             self._time_refresh_sub = configs["downloaders"]["reddit"]["params"][
+    #                 "time_refresh_sub"
+    #             ]
+    #             self._max_log_size = configs["downloaders"]["reddit"]["params"][
+    #                 "max_log_size"
+    #             ]
+    #
+    #             self._media_filepath = configs["params"]["media_filepath"]
+    #
+    #     except EnvironmentError as e:
+    #         print("Error when opening config. ", e)
+    #         utils.error_log("RedditDownloader", "Error when opening config", e)
+    #     except KeyError as e:
+    #         print("Error when applying config. ", e)
+    #         utils.error_log("RedditDownloader", "Error when applying configs", e)
 
-                self._media_filepath = configs["params"]["media_filepath"]
+    def validate_config(self, config_dict):
 
-        except EnvironmentError as e:
-            print("Error when opening config. ", e)
-            utils.error_log("RedditDownloader", "Error when opening config", e)
-        except KeyError as e:
-            print("Error when applying config. ", e)
-            utils.error_log("RedditDownloader", "Error when applying configs", e)
+        if config_not_valid:
+            raise InvalidConfigException
+
+        return True
 
     def _update_metadata_list(self, sub, type):
         subreddit = self._reddit.subreddit(sub)

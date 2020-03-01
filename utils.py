@@ -25,6 +25,9 @@ def remove_all_media(path):
 
 
 def get_gif_duration(filepath):
+    img = PIL.Image.open(filepath)
+    img.seek(0)
+    frames = duration = 0
     try:
         img = PIL.Image.open(filepath)
         img.seek(0)

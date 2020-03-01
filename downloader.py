@@ -19,6 +19,15 @@ class DownloaderThread(QtCore.QThread):
 
         self._load_config()
 
+        self.config = Config("filename")
+
+        self.scheduler = Scheduler(self.config.getSchedulerConf())
+        self.downloaders = dict()
+        for downloader_name, class_name, class_config in self.config.getDownloaders():
+            downloaders[downloader_name] = getattrs(class_name, class_config)
+
+        downloaders["reddit"] = redditDownloader(self.config.getDownloaderConf)
+        downloaders["reddit"] = b
         self.reddit = RedditDownloader()
 
     def _load_config(self):

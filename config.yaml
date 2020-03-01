@@ -1,38 +1,4 @@
-downloaders:
-  reddit:
-    id:
-    secret:
-    useragent: blink
-    user: medlemOV
-    password:
-    subreddits:
-      - pics
-      - EarthPorn
-    params:
-      download_batch_size: 1000 #How many images to attempt downloading per subreddit (MAX: 1000)
-      time_refresh_sub: 30 #In minutes: How long to wait between updating list of posts
-      update_interval: 30
-      show_top_comment: True
-      max_log_size: 1000 #Keep track of this many media elements we have already shown.
-
-  imgur:
-    param: 1
-  pixiv:
-    param: 1
-
-themes:
-  monday:
-    reddit:
-      - miku
-      - hatsunemiku
-      - miggu
-  wednesday:
-    reddit:
-      - me_irl
-      - meirl
-      - absolutelynotme_irl
-
-params:
+parameters:
   image_duration: 10 #Shows images for this amount of seconds
   min_gif_duration: 15 #Show gifs for at least this amount of seconds
   max_gif_duration: 100 #Show gifs for maximum this amount of seconds
@@ -45,6 +11,106 @@ params:
   max_aspect_ratio: 3
   title_font_size: 30
 
+downloaders:
+  reddit:
+    class: RedditDownloader
+    conf:
+      id:
+      secret:
+      useragent: blink
+      user: medlemOV
+      password:
+      download_batch_size: 1000 #How many images to attempt downloading per subreddit (MAX: 1000)
+      time_refresh_sub: 30 #In minutes: How long to wait between updating list of posts
+      update_interval: 30
+      show_top_comment: True
+      max_log_size: 1000 #Keep track of this many media elements we have already shown.
+  rss:
+    url: http://google.com/myRss
+    params:
+  imgur:
+    param: 1
+  pixiv:
+    param: 1
 
+weights:
+  reddit: 0.5
+  imgur: 0.2
+  pixiv: 0.3
+
+schedule:
+  holy_days:
+    - label: leapyear
+      date: 29.03
+      interval:
+        - staTime: 09:00
+          endTime: 12:00
+        - staTime: 12:30
+          endTime: 15:00
+      content:
+        reddit:
+          - omg. It is leapyear
+    - label: nasjonaldag
+      date: 17.05
+      interval:
+        startTime: 09:00
+        endTime: 12:00
+      content:
+        reddit:
+          - omg. It is national day
+    - date: 04.07
+      content:
+        reddit:
+          - omg. It is fourth of july
+
+  default_dayofweek:
+    - label: miku_mondays
+      dayofweek: monday
+      content:
+        reddit:
+          - miku
+          - miku_irl
+    - label: loddefredag
+      dayofweek: friday
+      interval:
+        start_time: 18:00
+        end_time: 00:00
+      content:
+        reddit:
+          - solderingporn
+          - cableporn
+    - label: loddefredag_continued
+      dayofweek: saturday
+      interval:
+        start_time: 00:00
+        end_time: 02:00
+      content:
+        reddit:
+          - solderingporn
+          - cableporn
+
+  default_intervals:
+    - label: nattskift
+      interval:
+        startTime: 00:00
+        endTime: 06:00
+      content:
+        reddit:
+          sfdgkjdfgøkjdfg
+    - label: etterJobb
+      interval:
+        startTime: 17:00
+        endTime: 20:00
+      content:
+        redit:
+          sfdgkjdfgøkjdfg
+
+  defaults:
+    reddit:
+      arabfunny: 1
+      okbuddyretard: 10
+      hmmm: 4
+      port: 4
+      takeaway: 4
 
 
