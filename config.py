@@ -58,7 +58,6 @@ class Config:
             assert _weights == 1
 
         except AssertionError as e:
-            print("Key is of wrong type")
             raise
 
         except KeyError as e:
@@ -74,12 +73,3 @@ class Config:
         except FileNotFoundError:
             print("Config file does not exist")
             raise
-
-
-# all parameters exist
-# downloaders entry exists and is list that contains
-#     - class
-#     - conf
-# and checks that "class".py exists
-# weights has correct entries and sum to 1.0
-# schedule exists and is list with correct entries
