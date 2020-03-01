@@ -11,7 +11,7 @@ from praw.exceptions import ClientException
 import PIL.Image
 
 
-class RedditDownloader(BaseDownloader):
+class RedditDownloader:
     def __init__(self, config):
         self.config = config
         self.validate_config()

@@ -15,7 +15,6 @@ class DownloaderThread(QtCore.QThread):
         self.downloaders = dict()
 
         self.config = Config("config.yaml")
-        self.scheduler = Scheduler(self.config.get_scheduler_config())
 
         for _downloader_name, _downloader_config in self.config.get_downloaders().items():
             _module = importlib.import_module("downloaders")
@@ -24,10 +23,13 @@ class DownloaderThread(QtCore.QThread):
 
             self.downloaders[_downloader_name] = instance
 
+        self.scheduler = Scheduler(self.config.get_scheduler_config(), self.downloaders)
+
     def validate_config(self):
+        # TODO: Validate the config specifically for the downloader thread
         pass
 
-    def _check_queue(self):
+    def _is_queue_full(self):
         """
         Checks if buffer needs refill :GLOM:
         """
@@ -41,25 +43,16 @@ class DownloaderThread(QtCore.QThread):
         TODO: If certain errors happen, prevent from downloading from that source again. If no more sources, stop program
         """
 
-        return self.reddit.download()
+        return self.scheduler.fetch()
 
     def run(self):
         self.running = True
         while self.running:
             if self._check_queue():
                 media = self._download()
-                valid_media = utils.valid_media(
-                    media,
-                    min_aspect_ratio=self._min_aspect_ratio,
-                    max_aspect_ratio=self._max_aspect_ratio,
-                )
-                if type(media) is utils.Media and valid_media:
-                    print("Put in queue")
+                if utils.is_valid_media(media):
                     self.queue.put(media)
-                elif type(media) is utils.Media and not valid_media:
-                    print("Not valid media, deleting ", media.filepath)
-                    utils.remove_media(media.filepath)
                 else:
-                    print("Returned image was not of media type")
+                    utils.remove_media(media.filepath)
 
             time.sleep(2)
