@@ -73,3 +73,22 @@ class Config:
         except FileNotFoundError:
             print("Config file does not exist")
             raise
+
+    def get_scheduler_config(self):
+        """
+        Extracts the needed config parameters for the scheduler
+        :return: dictionary with config
+        """
+        return_dict = dict()
+        return_dict.update({"parameters": self.config_dict["parameters"]})
+        return_dict.update({"weights": self.config_dict["weights"]})
+        return_dict.update({"schedule": self.config_dict["schedule"]})
+
+        return return_dict
+
+    def get_downloaders(self):
+        """
+        Extracts downloaders from config
+        :return: dictionary with downloaders and their configs
+        """
+        return self.config_dict["downloaders"]

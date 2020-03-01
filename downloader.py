@@ -1,33 +1,35 @@
+import importlib
+
 from downloaders import RedditDownloader
 from PyQt5 import QtCore
 import time
 import yaml
 import utils
-from praw.exceptions import ClientException
-from prawcore.exceptions import OAuthException
+from config import Config
+from scheduler import Scheduler
 
 
 class DownloaderThread(QtCore.QThread):
     def __init__(self, queue, parent=None):
         QtCore.QThread.__init__(self, parent)
         self.queue = queue
-
-        self._max_aspect_ratio = 0
-        self._min_aspect_ratio = 0
-        self._max_gif_duration = 0
-        self._min_gif_duration = 0
-
-        self._load_config()
-
-        self.config = Config("filename")
-
-        self.scheduler = Scheduler(self.config.getSchedulerConf())
         self.downloaders = dict()
-        for downloader_name, class_name, class_config in self.config.getDownloaders():
-            downloaders[downloader_name] = getattrs(class_name, class_config)
 
-        downloaders["reddit"] = redditDownloader(self.config.getDownloaderConf)
-        downloaders["reddit"] = b
+        self.config = Config("config.yaml")
+        self.scheduler = Scheduler(self.config.get_scheduler_config())
+
+        for (
+            _downloader_name,
+            _downloader_config,
+        ) in self.config.get_downloaders().items():
+            _module = importlib.import_module("downloaders")
+            _class = getattr(_module, _downloader_config["class"])
+            instance = _class(_downloader_config)
+
+            self.downloaders[_downloader_name] = instance
+
+        # downloaders["reddit"] = redditDownloader(self.config.getDownloaderConf)
+        # downloaders["reddit"] = b
         self.reddit = RedditDownloader()
 
     def _load_config(self):
