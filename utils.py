@@ -1,5 +1,9 @@
 import os
 import PIL.Image
+from type.Media import Media
+from validators.ImageValidator import ImageValidator
+from validators.GIFValidator import GIFValidator
+from validators.WEBMValidator import WEBMValidator
 
 
 def error_log(sender="etc", message="An error has occured", error=""):
@@ -16,12 +20,17 @@ def remove_media(path):
 def remove_all_media(path):
     for file in os.listdir(path):
         file_path = os.path.join(path, file)
-        try:
-            if os.path.isfile(file_path):
-                os.unlink(file_path)
-        except Exception as e:
-            error_log("utils", "Error removing media", e)
-            print(e)
+
+        if os.path.isfile(file_path):
+            os.unlink(file_path)
+
+
+def prepare_folders(media_path, log_path):
+    try:
+        os.makedirs(media_path)
+        os.makedirs(log_path)
+    except FileExistsError:
+        pass
 
 
 def get_gif_duration(filepath):
@@ -59,19 +68,21 @@ def get_width_height(filepath):
         return None, None
 
 
-def valid_media(media, min_aspect_ratio=0, max_aspect_ratio=0):
-    try:
-        img = PIL.Image.open(media.filepath)
-        aspect_ratio = img.size[0] / img.size[1]
-
-        if aspect_ratio >= min_aspect_ratio and aspect_ratio <= max_aspect_ratio:
-            return True
-        else:
-            return False
-
-    except Exception as e:
-        error_log("utils", "Error checking for valid media", e)
+def is_valid_media(media):
+    if type(media) != type(Media):
         return False
+
+    validator = None
+    if media.file_format in ["png", "jpeg"]:
+        validator = ImageValidator(media)
+    elif media.file_format == "gif":
+        validator = GIFValidator(media)
+    elif media.file_format == "webm":
+        validator = WEBMValidator(media)
+    else:
+        return False
+
+    return validator.validate()
 
 
 def read_from_log(downloader=""):
@@ -97,29 +108,3 @@ def log(downloader="", list=None, id=None, max_log_size=1000):
         list.pop(0)
     list.append(id)
     write_to_log(downloader, list)
-
-
-class Media:
-    def __init__(
-        self,
-        id=None,
-        filetype=None,
-        filepath=None,
-        title=None,
-        top_comment=None,
-        source=None,
-        url=None,
-        duration=None,
-        width=None,
-        height=None,
-    ):
-        self.id = id
-        self.filetype = filetype
-        self.filepath = filepath
-        self.title = title
-        self.top_comment = top_comment
-        self.source = source
-        self.url = url
-        self.duration = duration
-        self.width = width
-        self.height = height

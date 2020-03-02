@@ -1,33 +1,27 @@
-import importlib
-
-from downloaders import RedditDownloader
-from PyQt5 import QtCore
 import time
 import utils
-from config import Config
-from scheduler import Scheduler
+
+from downloaders import RedditDownloader
+from random import random
+from PyQt5 import QtCore
 
 
-class DownloaderThread(QtCore.QThread):
-    def __init__(self, queue, parent=None):
-        QtCore.QThread.__init__(self, parent)
+class Scheduler(QtCore.QThread):
+    def __init__(self, config, queue, downloaders):
+        QtCore.QThread.__init__(self)
+        self.config = config
         self.queue = queue
-        self.downloaders = dict()
-
-        self.config = Config("config.yaml")
-
-        for _downloader_name, _downloader_config in self.config.get_downloaders().items():
-            _module = importlib.import_module("downloaders")
-            _class = getattr(_module, _downloader_config["class"])
-            instance = _class(self.config.get_downloader_config(_downloader_name))
-
-            self.downloaders[_downloader_name] = instance
-
-        self.scheduler = Scheduler(self.config.get_scheduler_config(), self.downloaders)
+        self.downloaders = downloaders
 
     def validate_config(self):
         # TODO: Validate the config specifically for the downloader thread
         pass
+
+    def _choose_downloader(self):
+        keys = list(self.config["weights"].keys())
+        weights = list(self.config["weights"].values())
+
+        return random.choices(population=keys, weights=weights)[0]
 
     def _is_queue_full(self):
         """
@@ -42,13 +36,14 @@ class DownloaderThread(QtCore.QThread):
         TODO: Add support for more sources
         TODO: If certain errors happen, prevent from downloading from that source again. If no more sources, stop program
         """
-
-        return self.scheduler.fetch()
+        _downloader = self._choose_downloader()
+        media = self.downloaders[_downloader].download()
+        return media
 
     def run(self):
         self.running = True
         while self.running:
-            if self._check_queue():
+            if self._is_queue_full():
                 media = self._download()
                 if utils.is_valid_media(media):
                     self.queue.put(media)

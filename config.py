@@ -16,14 +16,14 @@ class Config:
         """
         try:
             # Parameters #
-            assert type(self.config_dict["parameters"]["image_duration"]) == int
-            assert type(self.config_dict["parameters"]["min_gif_duration"]) == int
-            assert type(self.config_dict["parameters"]["max_gif_duration"]) == int
-            assert type(self.config_dict["parameters"]["gif_iterations"]) == int
+            assert type(self.config_dict["parameters"]["media_duration"]) == int
+            assert type(self.config_dict["parameters"]["min_video_duration"]) == int
+            assert type(self.config_dict["parameters"]["max_video_duration"]) == int
+            assert type(self.config_dict["parameters"]["video_iterations"]) == int
             assert type(self.config_dict["parameters"]["time_delay_text"]) == int
             assert type(self.config_dict["parameters"]["max_queue_size"]) == int
-            assert type(self.config_dict["parameters"]["media_filepath"]) == str
-            assert type(self.config_dict["parameters"]["log_filepath"]) == str
+            assert type(self.config_dict["parameters"]["media_path"]) == str
+            assert type(self.config_dict["parameters"]["log_path"]) == str
             assert type(self.config_dict["parameters"]["min_aspect_ratio"]) == float
             assert type(self.config_dict["parameters"]["max_aspect_ratio"]) == float
             assert type(self.config_dict["parameters"]["title_font_size"]) == int
@@ -53,13 +53,8 @@ class Config:
                 _class = getattr(_module, _config["class"])
                 instance = _class(self.get_downloader_config(_downloader_name))
 
-            # Check that the weighting section sums up to 1.0
-            _weights = 0
-            for k, v in self.config_dict["weights"].items():
-                _weights += v
-            assert _weights == 1
-
         except AssertionError as e:
+            print(f"Invalid config: {e.args[0]}")
             raise
 
         except KeyError as e:
@@ -100,9 +95,21 @@ class Config:
 
         return return_dict
 
+    def get_gui_config(self):
+        return self.config_dict["parameters"]
+
     def get_downloaders(self):
         """
         Extracts downloaders from config
         :return: dictionary with downloaders and their configs
         """
         return self.config_dict["downloaders"]
+
+    def get_queue_size(self):
+        return self.config_dict["parameters"]["max_queue_size"]
+
+    def get_media_path(self):
+        return self.config_dict["parameters"]["media_path"]
+
+    def get_log_path(self):
+        return self.config_dict["parameters"]["log_path"]

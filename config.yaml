@@ -1,12 +1,12 @@
 parameters:
-  image_duration: 10 # int: Shows images for this amount of seconds
-  min_gif_duration: 15 # int: Show gifs for at least this amount of seconds
-  max_gif_duration: 100 # int: Show gifs for maximum this amount of seconds
-  gif_iterations: 2 # int: Optimally, show gifs for this amount of iterations. min_gif_duration and max_gif_duration supersedes this config
+  media_duration: 10 # int: Shows images for this amount of seconds
+  min_video_duration: 15 # int: Show video for at least this amount of seconds
+  max_video_duration: 100 # int: Show video for maximum this amount of seconds
+  video_iterations: 2 # int: Optimally, show video for this amount of iterations. min_video_duration and max_video_duration supersedes this config
   time_delay_text: 5 # int: Waits this amount of seconds before showing text overlay. Must be larger than image_duration.
   max_queue_size: 10 # int: How many images to store before showing
-  media_filepath: /home/omegav/git/Blink/images # str
-  log_filepath: /home/omegav/git/Blink/logs # str
+  media_path: /home/medlem/git/Blink/images # str
+  log_path: /home/medlem/git/Blink/logs # str
   min_aspect_ratio: 0.5 # float
   max_aspect_ratio: 3.0 # float
   title_font_size: 30 # int
@@ -25,6 +25,7 @@ downloaders:
       update_interval: 30
       show_top_comment: True
       max_log_size: 1000 #Keep track of this many media elements we have already shown.
+
 #  rss:
 #    url: http://google.com/myRss
 #    params:

@@ -1,48 +1,40 @@
-from downloader import DownloaderThread
-from queue import Queue
-import time
-import yaml
+import importlib
 import sys
-from PyQt5 import QtCore, QtGui, QtWidgets
 import utils
-import config
-import math
-
-# TODO: Implement log filepath from config
+from config import Config
+from PyQt5 import QtCore, QtGui, QtWidgets
+from downloader import Scheduler
+from queue import Queue
 
 
 class Blink(QtWidgets.QMainWindow):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, config, media_queue):
+        super(Blink, self).__init__()
+
         # Config variables
-        self._max_queue_size = 0
-        self._image_duration = 0
-        self._time_delay_text = 0
-        self._media_filepath = ""
-        self._title_font_size = 0
-        self._min_gif_duration = 0
-        self._max_gif_duration = 0
-        self._gif_iterations = 0
+        self._media_duration = config["media_duration"]
+        self._min_video_duration = config["min_video_duration"]
+        self._max_video_duration = config["max_video_duration"]
+        self._video_iterations = config["video_iterations"]
+        self._time_delay_text = config["time_delay_text"]
+        self._media_path = config["media_path"]
+        self._log_path = config["log_path"]
+        self._min_aspect_ratio = config["min_aspect_ratio"]
+        self._max_aspect_ratio = config["max_aspect_ratio"]
+        self._title_font_size = config["title_font_size"]
 
         # Other variables
         self.title = "Blink"
+        self.media_queue = media_queue
         self._current_media = None
 
-        self._load_config()
-
-        # Start downloader
-        self.media_queue = Queue(maxsize=self._max_queue_size)
-        self.downloader_thread = DownloaderThread(self.media_queue)
-        self.downloader_thread.start()
-
         # Start viewer
-
         self._viewer_timer = QtCore.QTimer()
         self._viewer_timer.setSingleShot(True)
         self._viewer_timer.timeout.connect(self.show_media)
 
         # Clear the image buffer
-        utils.remove_all_media(self._media_filepath)
+        utils.remove_all_media(self._media_path)
 
         self.initUI()
 
@@ -61,11 +53,6 @@ class Blink(QtWidgets.QMainWindow):
         self._title_label.setFont(
             QtGui.QFont("Sans Serif", self._title_font_size, QtGui.QFont.Bold)
         )
-        drop_shadow = QtWidgets.QGraphicsDropShadowEffect()
-        drop_shadow.setBlurRadius(20)
-        drop_shadow.setColor(QtGui.QColor("#000000"))
-        drop_shadow.setOffset(5, 5)
-        self._title_label.setGraphicsEffect(drop_shadow)
 
         self._media_label = QtWidgets.QLabel(widget)
         self._media_label.setAlignment(QtCore.Qt.AlignCenter)
@@ -83,68 +70,31 @@ class Blink(QtWidgets.QMainWindow):
     def show_media(self):
 
         # Delete the previously shown media
-        if type(self._current_media) is utils.Media:
-            utils.remove_media(self._current_media.filepath)
+        if self._current_media != None:
+            utils.remove_media(self._current_media.file_path)
 
         # Fetch new image from queue
         self._current_media = self.media_queue.get()
 
         # Show new image from queue
-        duration = self._image_duration
-        if type(self._current_media) is utils.Media:
-
-            if self._current_media.filetype == "gif":
-                gif = QtGui.QMovie(self._current_media.filepath)
-
-                # Scaling magic to resize gif
-                media_label_width = self._media_label.size().width()
-                media_label_height = self._media_label.size().height()
-                width_scale_factor = media_label_width / self._current_media.width
-                height_scale_factor = media_label_height / self._current_media.height
-                scale_factor = min(width_scale_factor, height_scale_factor)
-                gif_resized_size = QtCore.QSize(
-                    self._current_media.width * scale_factor,
-                    self._current_media.height * scale_factor,
-                )
-                gif.setScaledSize(gif_resized_size)
-
-                # Calculate amount of time needed to loop the gif right amount of times
-                try:
-                    duration = self._gif_iterations * self._current_media.duration
-                    if not self._current_media.duration > self._max_gif_duration:
-                        while duration < self._min_gif_duration:
-                            duration += self._current_media.duration
-                        while duration > self._max_gif_duration:
-                            duration -= self._current_media.duration
-                    else:
-                        duration = self._max_gif_duration
-                except Exception as e:
-                    print("Error fetching image duration. Setting to default")
-                    duration = self._image_duration
-
-                # Actually start gif
-                self._media_label.setMovie(gif)
-                self._title_label.setText(self._current_media.title)
-                gif.start()
+        if self._current_media != None:
+            self._title_label.setText(self._current_media.title)
+            pixmap = QtGui.QPixmap(self._current_media.file_path)
+            if pixmap.isNull():
+                duration = 0.1
             else:
-                self._title_label.setText(self._current_media.title)
-                pixmap = QtGui.QPixmap(self._current_media.filepath)
-                if pixmap.isNull():
-                    duration = 0.1
-                else:
-                    self._media_label.setPixmap(
-                        pixmap.scaled(
-                            self._media_label.size(),
-                            QtCore.Qt.KeepAspectRatio,
-                            QtCore.Qt.SmoothTransformation,
-                        )
+                self._media_label.setPixmap(
+                    pixmap.scaled(
+                        self._media_label.size(),
+                        QtCore.Qt.KeepAspectRatio,
+                        QtCore.Qt.SmoothTransformation,
                     )
+                )
 
         else:
             print("Queue is empty")
 
-        print(duration)
-        timer = QtCore.QTimer.singleShot(duration * 1000, self.show_media)
+        timer = QtCore.QTimer.singleShot(self._media_duration * 1000, self.show_media)
 
     def showBlink(self):
         self.showFullScreen()
@@ -152,29 +102,25 @@ class Blink(QtWidgets.QMainWindow):
     def hideBlink(self):
         self.hide()
 
-    def _load_config(self):
-        try:
-            with open("config.yaml") as f:
-                configs = yaml.safe_load(f)
-                self._max_queue_size = configs["params"]["max_queue_size"]
-                self._image_duration = configs["params"]["image_duration"]
-                self._time_delay_text = configs["params"]["time_delay_text"]
-                self._media_filepath = configs["params"]["media_filepath"]
-                self._title_font_size = configs["params"]["title_font_size"]
-                self._min_gif_duration = configs["params"]["min_gif_duration"]
-                self._max_gif_duration = configs["params"]["max_gif_duration"]
-                self._gif_iterations = configs["params"]["gif_iterations"]
-
-        except EnvironmentError as e:
-            print("Error when opening config. ", e)
-            utils.error_log("MainApplication", "Error when opening config", e)
-        except KeyError as e:
-            print("Error when applying config. ", e)
-            utils.error_log("MainApplication", "Error when applying configs", e)
-
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
-    ex = Blink()
+
+    config = Config("config.yaml")
+    downloaders = dict()
+    media_queue = Queue(maxsize=config.get_queue_size())
+
+    utils.prepare_folders(config.get_media_path(), config.get_log_path())
+
+    for _downloader_name, _downloader_config in config.get_downloaders().items():
+        _module = importlib.import_module("downloaders")
+        _class = getattr(_module, _downloader_config["class"])
+        instance = _class(config.get_downloader_config(_downloader_name))
+
+        downloaders[_downloader_name] = instance
+
+    scheduler = Scheduler(config.get_scheduler_config(), media_queue, downloaders)
+    # scheduler.start()
+    ex = Blink(config.get_gui_config(), media_queue)
     ex.show_media()
     sys.exit(app.exec_())

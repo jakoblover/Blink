@@ -1,9 +1,9 @@
 from .MediaValidator import MediaValidator
 
 
-class GIFValidator(MediaValidator):
+class WEBMValidator(MediaValidator):
     def __init__(self, media):
-        super(GIFValidator, self).__init__(media)
+        super(WEBMValidator, self).__init__(media)
 
     def validate(self):
         pass
