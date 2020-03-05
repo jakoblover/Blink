@@ -1,5 +1,7 @@
 import importlib
 import sys
+import time
+
 import utils
 from config import Config
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -71,7 +73,7 @@ class Blink(QtWidgets.QMainWindow):
 
         # Delete the previously shown media
         if self._current_media != None:
-            utils.remove_media(self._current_media.file_path)
+            self._current_media.remove()
 
         # Fetch new image from queue
         self._current_media = self.media_queue.get()
@@ -104,23 +106,39 @@ class Blink(QtWidgets.QMainWindow):
 
 
 if __name__ == "__main__":
+    print("[MAIN] Instantiating application")
     app = QtWidgets.QApplication(sys.argv)
 
+    print("[MAIN] Importing config")
     config = Config("config.yaml")
     downloaders = dict()
     media_queue = Queue(maxsize=config.get_queue_size())
 
+    print("[MAIN] Creating media and log paths")
     utils.prepare_folders(config.get_media_path(), config.get_log_path())
 
+    print("[MAIN] Instantiating downloaders")
     for _downloader_name, _downloader_config in config.get_downloaders().items():
         _module = importlib.import_module("downloaders")
         _class = getattr(_module, _downloader_config["class"])
-        instance = _class(config.get_downloader_config(_downloader_name))
+        instance = _class(
+            config.get_downloader_config(_downloader_name),
+            config.get_media_path(),
+            config.get_log_path(),
+        )
 
+        print(f"[MAIN] Instantiated downloader {_class}")
         downloaders[_downloader_name] = instance
 
+    print("[MAIN] Starting Scheduler")
     scheduler = Scheduler(config.get_scheduler_config(), media_queue, downloaders)
-    # scheduler.start()
+
+    print("[MAIN] Starting application")
     ex = Blink(config.get_gui_config(), media_queue)
+    print("[MAIN] Showing media")
     ex.show_media()
+
+    scheduler.start()
+    scheduler.run()
+
     sys.exit(app.exec_())

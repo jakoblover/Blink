@@ -2,8 +2,7 @@ import os
 import PIL.Image
 from type.Media import Media
 from validators.ImageValidator import ImageValidator
-from validators.GIFValidator import GIFValidator
-from validators.WEBMValidator import WEBMValidator
+from validators.VideoValidator import VideoValidator
 
 
 def error_log(sender="etc", message="An error has occured", error=""):
@@ -12,14 +11,9 @@ def error_log(sender="etc", message="An error has occured", error=""):
         f.write("[ERROR] {0}. {1}\n".format(message, error))
 
 
-def remove_media(path):
-    if os.path.isfile(path):
-        os.unlink(path)
-
-
-def remove_all_media(path):
-    for file in os.listdir(path):
-        file_path = os.path.join(path, file)
+def remove_all_media(file_path):
+    for file in os.listdir(file_path):
+        file_path = os.path.join(file_path, file)
 
         if os.path.isfile(file_path):
             os.unlink(file_path)
@@ -31,6 +25,12 @@ def prepare_folders(media_path, log_path):
         os.makedirs(log_path)
     except FileExistsError:
         pass
+
+
+def get_width_height(filepath):
+    img = PIL.Image.open(filepath)
+    width, height = img.size[0], img.size[1]
+    return width, height
 
 
 def get_gif_duration(filepath):
@@ -53,32 +53,31 @@ def get_gif_duration(filepath):
         return None
 
 
-def get_width_height(filepath):
-    try:
-        img = PIL.Image.open(filepath)
-        width, height = img.size[0], img.size[1]
-        return width, height
-    except Exception as e:
-        print("Big fugg when fetching height and width")
-        error_log(
-            "utils",
-            "Width and height could not be extracted. Image was probably not an image file.",
-            e,
-        )
-        return None, None
+# def get_width_height(filepath):
+#     try:
+#         img = PIL.Image.open(filepath)
+#         width, height = img.size[0], img.size[1]
+#         return width, height
+#     except Exception as e:
+#         print("Big fugg when fetching height and width")
+#         error_log(
+#             "utils",
+#             "Width and height could not be extracted. Image was probably not an image file.",
+#             e,
+#         )
+#         return None, None
 
 
 def is_valid_media(media):
-    if type(media) != type(Media):
+    return True
+    if type(media) != Media:
         return False
 
     validator = None
-    if media.file_format in ["png", "jpeg"]:
+    if media.file_format in ["png", "jpg", "jpeg", "bmp"]:
         validator = ImageValidator(media)
-    elif media.file_format == "gif":
-        validator = GIFValidator(media)
-    elif media.file_format == "webm":
-        validator = WEBMValidator(media)
+    elif media.file_format in ["mkv", "mp4"]:
+        validator = VideoValidator(media)
     else:
         return False
 

@@ -4,14 +4,25 @@ from .MediaValidator import MediaValidator
 
 
 class ImageValidator(MediaValidator):
-    def __init__(self, media):
+    def __init__(self, media, config):
         super(ImageValidator, self).__init__(media)
 
-    def validate(self):
-        img = PIL.Image.open(self.media.filepath)
-        aspect_ratio = img.size[0] / img.size[1]
+        self.config = config
 
-        if aspect_ratio >= min_aspect_ratio and aspect_ratio <= max_aspect_ratio:
+    def validate(self):
+
+        width, height = self._get_width_height(self.media.file_path)
+        aspect_ratio = width / height
+
+        if (
+            aspect_ratio >= self.config["min_aspect_ratio"]
+            and aspect_ratio <= self.config["max_aspect_ratio"]
+        ):
             return True
         else:
             return False
+
+    def _get_width_height(self, filepath):
+        img = PIL.Image.open(filepath)
+        width, height = img.size[0], img.size[1]
+        return width, height

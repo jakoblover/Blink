@@ -36,8 +36,8 @@ downloaders:
 
 weights:
   reddit: 0.5
-  imgur: 0.2
-  pixiv: 0.3
+  #imgur: 0.2
+  #pixiv: 0.3
 
 schedule:
   holy_days:
@@ -108,10 +108,8 @@ schedule:
 
   defaults:
     reddit:
-      arabfunny: 1
-      okbuddyretard: 10
-      hmmm: 4
-      port: 4
-      takeaway: 4
+      - arabfunny
+      - okbuddyretard
+      - hmmm
 
 

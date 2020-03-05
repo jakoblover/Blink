@@ -1,9 +1,10 @@
 import time
 import utils
-
-from downloaders import RedditDownloader
-from random import random
+import random
+from queue import Queue
 from PyQt5 import QtCore
+
+from type.Media import Media
 
 
 class Scheduler(QtCore.QThread):
@@ -12,6 +13,9 @@ class Scheduler(QtCore.QThread):
         self.config = config
         self.queue = queue
         self.downloaders = downloaders
+
+        self.buffer = Queue(maxsize=config["parameters"]["max_queue_size"])
+        self.running = False
 
     def validate_config(self):
         # TODO: Validate the config specifically for the downloader thread
@@ -23,31 +27,41 @@ class Scheduler(QtCore.QThread):
 
         return random.choices(population=keys, weights=weights)[0]
 
-    def _is_queue_full(self):
-        """
-        Checks if buffer needs refill :GLOM:
-        """
-        return not self.queue.full()
+    def _choose_tag(self, downloader):
+        # TODO: The chosen tag needs to also be based on the schedule
+        # TODO: If a tag has been tried many times and still doesnt work, wait longer to retry
+
+        return random.choice(self.config["schedule"]["defaults"][downloader])
 
     def _download(self):
         """
         Decide what source to download from.
         :return: media object
-        TODO: Add support for more sources
         TODO: If certain errors happen, prevent from downloading from that source again. If no more sources, stop program
         """
-        _downloader = self._choose_downloader()
-        media = self.downloaders[_downloader].download()
+        downloader = self._choose_downloader()
+        tag = self._choose_tag(downloader)
+        print(f"[SCHEDULER] Trying to download from {tag} through {downloader}")
+        media = self.downloaders[downloader].download(tag)
         return media
 
     def run(self):
         self.running = True
         while self.running:
-            if self._is_queue_full():
+            if not self.buffer.full():
                 media = self._download()
-                if utils.is_valid_media(media):
-                    self.queue.put(media)
-                else:
-                    utils.remove_media(media.filepath)
 
-            time.sleep(2)
+                if media != None:
+                    if utils.is_valid_media(media):
+                        print("[SCHEDULER] Added media to queue")
+                        self.buffer.put(media)
+                    else:
+                        print("[SCHEDULER] Removing invalid media")
+                        media.remove()
+                else:
+                    print("[SCHEDULER] Downloader returned with error")
+
+            if not self.queue.full():
+                self.queue.put(self.buffer.get())
+
+            time.sleep(1)

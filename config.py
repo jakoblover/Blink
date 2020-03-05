@@ -51,7 +51,11 @@ class Config:
                 # Check if we are able to create a class
                 _module = importlib.import_module("downloaders")
                 _class = getattr(_module, _config["class"])
-                instance = _class(self.get_downloader_config(_downloader_name))
+                instance = _class(
+                    self.get_downloader_config(_downloader_name),
+                    self.get_media_path(),
+                    self.get_log_path(),
+                )
 
         except AssertionError as e:
             print(f"Invalid config: {e.args[0]}")
@@ -94,6 +98,9 @@ class Config:
         return_dict.update(self.config_dict["downloaders"][downloader_name]["conf"])
 
         return return_dict
+
+    def get_verifier_config(self):
+        return self.config_dict["parameters"]
 
     def get_gui_config(self):
         return self.config_dict["parameters"]
