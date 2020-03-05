@@ -132,13 +132,11 @@ if __name__ == "__main__":
 
     print("[MAIN] Starting Scheduler")
     scheduler = Scheduler(config.get_scheduler_config(), media_queue, downloaders)
-
+    scheduler.start()
     print("[MAIN] Starting application")
     ex = Blink(config.get_gui_config(), media_queue)
     print("[MAIN] Showing media")
+    scheduler.running = True
     ex.show_media()
-
-    scheduler.start()
-    scheduler.run()
 
     sys.exit(app.exec_())

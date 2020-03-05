@@ -146,7 +146,7 @@ class RedditDownloader:
 
         if len(self._log_shown_images) >= self._log_shown_images.maxlen:
             self._log_shown_images.popleft()
-        self._log_shown_images.append(self._last_image_found)
+        self._log_shown_images.append(self._last_image_found.id)
         return self._last_image_found
 
 
